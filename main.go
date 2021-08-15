@@ -9,7 +9,8 @@ const STACK_CAPACITY = 1024
 type VM struct {
 	stack_size int
 	STACK      [STACK_CAPACITY]int
-	INST       []Inst
+	PROGRAM    []Inst
+	inst_ptr   int
 }
 type Inst struct {
 	Name       string
@@ -70,7 +71,8 @@ func push_inst(vm *VM, inst Inst) {
 	default:
 		panic("Unknown Instruction")
 	}
-	vm.INST = append(vm.INST, inst)
+	vm.PROGRAM = append(vm.PROGRAM, inst)
+	vm.inst_ptr += 1
 
 }
 
@@ -86,33 +88,33 @@ func print_stack(vm *VM) {
 	fmt.Println()
 }
 
-func print_inst_trace(vm *VM, banner bool) {
-	if len(vm.INST) == 0 {
+func print_program_trace(vm *VM, banner bool) {
+	if len(vm.PROGRAM) == 0 {
 		panic("Empty Instruction Slice")
 	}
-	if banner == true {
-		fmt.Println("---- INST TRACE BEG ----")
+	if banner {
+		fmt.Println("---- PROGRAM TRACE BEG ----")
 	}
-	for i := len(vm.INST) - 1; i >= 0; i-- {
-		switch vm.INST[i].Name {
+	for i := len(vm.PROGRAM) - 1; i >= 0; i-- {
+		switch vm.PROGRAM[i].Name {
 		case "PUSH":
-			fmt.Printf("%s : %d \n", vm.INST[i].Name, vm.INST[i].Value)
+			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Value)
 		case "ADD":
-			fmt.Printf("%s \n", vm.INST[i].Name)
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "SUB":
-			fmt.Printf("%s \n", vm.INST[i].Name)
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "MUL":
-			fmt.Printf("%s \n", vm.INST[i].Name)
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		}
 	}
-	if banner == true {
-		fmt.Println("---- INST TRACE END ----")
+	if banner {
+		fmt.Println("---- PROGRAM TRACE END ----")
 	}
 }
 func main() {
 	var initial [STACK_CAPACITY]int
 	var initial_inst []Inst
-	vm_g := VM{stack_size: 0, STACK: initial, INST: initial_inst}
+	vm_g := VM{stack_size: 0, STACK: initial, PROGRAM: initial_inst, inst_ptr: -1}
 	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
 	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
 	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
@@ -120,12 +122,14 @@ func main() {
 	print_stack(&vm_g)
 	push_inst(&vm_g, Inst{Name: "ADD", Value: 0, Is_Operand: true})
 	print_stack(&vm_g)
-	// print_inst_trace(&vm_g)
+	// print_program_trace(&vm_g)
 	push_inst(&vm_g, Inst{Name: "MUL", Value: 0, Is_Operand: true})
 	print_stack(&vm_g)
 	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
 	print_stack(&vm_g)
 	push_inst(&vm_g, Inst{Name: "SUB", Value: 10, Is_Operand: true})
 	print_stack(&vm_g)
-	print_inst_trace(&vm_g, true)
+	print_program_trace(&vm_g, true)
+
+	// fmt.Println(vm_g)
 }
