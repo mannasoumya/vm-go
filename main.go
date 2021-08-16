@@ -5,43 +5,59 @@ import (
 )
 
 const STACK_CAPACITY = 1024
+const PROGRAM_CAPACITY = 1024
 
 type VM struct {
 	stack_size int
 	STACK      [STACK_CAPACITY]int
-	PROGRAM    []Inst
+	PROGRAM    [PROGRAM_CAPACITY]Inst
 	inst_ptr   int
+	vm_halt    int
 }
+
 type Inst struct {
-	Name       string
-	Value      int
-	Is_Operand bool
+	Name    string
+	Operand int
 }
 
 func push(vm *VM, inst Inst) {
-	vm.STACK[vm.stack_size] = inst.Value
+	vm.STACK[vm.stack_size] = inst.Operand
 	vm.stack_size += 1
 }
 
-func add(vm *VM, inst Inst) {
+func add(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to add")
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-1] + vm.STACK[vm.stack_size-2]
 	vm.stack_size -= 1
 }
-func sub(vm *VM, inst Inst) {
+
+func sub(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to subtract")
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] - vm.STACK[vm.stack_size-1]
 	vm.stack_size -= 1
 }
-func mul(vm *VM, inst Inst) {
+
+func mul(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to multiply")
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] * vm.STACK[vm.stack_size-1]
+	vm.stack_size -= 1
+}
+
+func div(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values to divide")
+	}
+	if vm.STACK[vm.stack_size-1] == 0 {
+		print_stack(vm)
+		panic("Zero Division Error")
+	}
+	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] / vm.STACK[vm.stack_size-1]
 	vm.stack_size -= 1
 }
 
@@ -52,7 +68,21 @@ func peek(vm *VM) int {
 	return vm.STACK[vm.stack_size-1]
 }
 
-func push_inst(vm *VM, inst Inst) {
+func jmp(vm *VM, inst Inst) {
+	if inst.Operand < 0 {
+		panic("Wrong Jump Instruction. Underflow")
+	}
+	if inst.Operand >= vm.inst_ptr {
+		panic("Wrong Jump Instruction. Overflow")
+	}
+	vm.inst_ptr = inst.Operand
+}
+
+func halt(vm *VM){
+	vm.vm_halt = 1
+}
+
+func execute_inst(vm *VM, inst Inst) {
 	if vm.stack_size < 0 {
 		panic("Stack Underflow")
 	}
@@ -63,16 +93,24 @@ func push_inst(vm *VM, inst Inst) {
 	case "PUSH":
 		push(vm, inst)
 	case "ADD":
-		add(vm, inst)
+		add(vm)
 	case "SUB":
-		sub(vm, inst)
+		sub(vm)
 	case "MUL":
-		mul(vm, inst)
+		mul(vm)
+	case "DIV":
+		div(vm)
+	case "JMP":
+		jmp(vm, inst)
+	case "HALT":
+		halt(vm)
+	case "NOP":
+		{}
 	default:
 		panic("Unknown Instruction")
 	}
-	vm.PROGRAM = append(vm.PROGRAM, inst)
-	vm.inst_ptr += 1
+	// vm.PROGRAM[vm.inst_ptr] =  inst
+	// vm.inst_ptr += 1
 
 }
 
@@ -95,41 +133,88 @@ func print_program_trace(vm *VM, banner bool) {
 	if banner {
 		fmt.Println("---- PROGRAM TRACE BEG ----")
 	}
+	
 	for i := len(vm.PROGRAM) - 1; i >= 0; i-- {
 		switch vm.PROGRAM[i].Name {
 		case "PUSH":
-			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Value)
+			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "ADD":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "SUB":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "MUL":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "DIV":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "JMP":
+			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+		case "HALT":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "NOP":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		}
 	}
 	if banner {
 		fmt.Println("---- PROGRAM TRACE END ----")
+		fmt.Println()
 	}
 }
+
+func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_panic bool) {
+	if program_size > PROGRAM_CAPACITY {
+		panic("Overflow")
+	}
+
+	halt_flag := false
+	for i := 0; i < program_size; i++ {
+		if program[i].Name == "HALT" {
+			halt_flag = true
+		}
+		vm.PROGRAM[vm.inst_ptr] = program[i]
+		vm.inst_ptr += 1 
+	}
+	if halt_flag == false {
+		if halt_panic {
+			print_program_trace(vm,true)
+			panic("No `HALT` instruction in PROGRAM")
+		}
+	}
+}
+
+func execute_program(vm *VM) {
+	if vm.inst_ptr == 0 {
+		panic("No instruction to execute.. Load Program first")
+	}
+	counter := 0
+	tot_len := vm.inst_ptr
+	for (vm.vm_halt != 1 && counter < tot_len) {
+		execute_inst(vm, vm.PROGRAM[counter % tot_len])
+		// fmt.Printf("\n[%s : %d]\n",vm.PROGRAM[counter % tot_len].Name , vm.PROGRAM[counter % tot_len].Operand)
+		// print_stack(vm)
+		counter = (counter + 1) % tot_len
+	}
+}
+
 func main() {
 	var initial [STACK_CAPACITY]int
-	var initial_inst []Inst
-	vm_g := VM{stack_size: 0, STACK: initial, PROGRAM: initial_inst, inst_ptr: -1}
-	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
-	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
-	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
-	push_inst(&vm_g, Inst{Name: "PUSH", Value: 20, Is_Operand: true})
-	print_stack(&vm_g)
-	push_inst(&vm_g, Inst{Name: "ADD", Value: 0, Is_Operand: true})
-	print_stack(&vm_g)
-	// print_program_trace(&vm_g)
-	push_inst(&vm_g, Inst{Name: "MUL", Value: 0, Is_Operand: true})
-	print_stack(&vm_g)
-	push_inst(&vm_g, Inst{Name: "PUSH", Value: 10, Is_Operand: true})
-	print_stack(&vm_g)
-	push_inst(&vm_g, Inst{Name: "SUB", Value: 10, Is_Operand: true})
+	var initial_inst [PROGRAM_CAPACITY]Inst
+	var prgm = []Inst {
+		Inst{Name: "PUSH", Operand: 10},
+		Inst{Name: "PUSH", Operand: 10},
+		Inst{Name: "PUSH", Operand: 10},
+		Inst{Name: "PUSH", Operand: 20},
+		Inst{Name: "ADD"},
+		Inst{Name: "MUL"},
+		Inst{Name: "NOP"},
+		Inst{Name: "PUSH", Operand: 10},
+		Inst{Name: "SUB", Operand: 10},
+		Inst{Name: "HALT"},
+	}
+	program_size := len(prgm)
+	
+	vm_g := VM{stack_size: 0, STACK: initial, PROGRAM: initial_inst, inst_ptr: 0}
+	load_program_from_memory(&vm_g, prgm, program_size, true)
+	execute_program(&vm_g)
 	print_stack(&vm_g)
 	print_program_trace(&vm_g, true)
-
-	// fmt.Println(vm_g)
 }
