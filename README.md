@@ -29,16 +29,16 @@ func main() {
     var initial [STACK_CAPACITY]int
 	var initial_inst [PROGRAM_CAPACITY]Inst
 	var prgm = []Inst {
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 20},
-		Inst{Name: "ADD"},
-		Inst{Name: "MUL"},
-		Inst{Name: "NOP"},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "SUB", Operand: 10},
-		Inst{Name: "HALT"},
+	Inst{Name: "PUSH", Operand: 10},
+	Inst{Name: "PUSH", Operand: 10},
+	Inst{Name: "PUSH", Operand: 10},
+	Inst{Name: "PUSH", Operand: 20},
+	Inst{Name: "ADD"},
+	Inst{Name: "MUL"},
+	Inst{Name: "NOP"},
+	Inst{Name: "PUSH", Operand: 10},
+	Inst{Name: "SUB", Operand: 10},
+	Inst{Name: "HALT"},
 	}
 	program_size := len(prgm)
 	
