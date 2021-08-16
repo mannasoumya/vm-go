@@ -26,7 +26,7 @@
 
 ```go
 func main() {
-    var initial [STACK_CAPACITY]int
+    	var initial [STACK_CAPACITY]int
 	var initial_inst [PROGRAM_CAPACITY]Inst
 	var prgm = []Inst {
 	Inst{Name: "PUSH", Operand: 10},
