@@ -239,7 +239,7 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 	if program_size > PROGRAM_CAPACITY {
 		panic("Overflow")
 	}
-
+	if debug { fmt.Println() }
 	halt_flag := false
 	for i := 0; i < program_size; i++ {
 		if program[i].Name == "HALT" {
@@ -247,6 +247,9 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 		}
 		vm.PROGRAM[vm.program_size] = program[i]
 		vm.program_size += 1 
+		if debug {
+			fmt.Printf("Loaded Instruction: %s %d\n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
+		}
 	}
 	if halt_flag == false {
 		if halt_panic {
@@ -254,6 +257,7 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 			panic("No `HALT` instruction in PROGRAM")
 		}
 	}
+	if debug { fmt.Println() }
 }
 
 func process_comment(line string) string {
@@ -277,6 +281,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	lines := strings.Split(strings.ReplaceAll(file_content, "\r\n", "\n"), "\n")
 	instruction_count := 0
 	halt_flag := false
+	if debug { fmt.Println() }
 	for i:=0; i<len(lines) ; i++ {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		if line != "" {
@@ -407,7 +412,10 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				fmt.Printf("Number of Instructions is greater than PROGRAM CAPACITY = %d", PROGRAM_CAPACITY)
 				panic("Overflow")
 			}
-		}	
+			if debug {
+				fmt.Printf("Loaded Instruction: %s %d\n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
+			}
+		}
 	}
 	if halt_flag == false {
 		if halt_panic {
@@ -415,6 +423,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 			panic("No `HALT` instruction in PROGRAM")
 		}
 	}
+	if debug { fmt.Println() }
 }
 
 func execute_program(vm *VM, limit int) {
@@ -426,7 +435,7 @@ func execute_program(vm *VM, limit int) {
 		if debug {
 			print_stack(vm, true)
 			fmt.Printf("IP : %d\n", vm.inst_ptr)
-			fmt.Printf("Instruction to be executed : `%s %d`\n", vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
+			fmt.Printf("STEP(%d) Instruction to be executed : `%s %d`\n", (counter+1), vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
 			prompt_for_debug()
 		}
 		execute_inst(vm, vm.PROGRAM[vm.inst_ptr])
