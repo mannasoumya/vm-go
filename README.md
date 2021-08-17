@@ -24,6 +24,11 @@
 > .\go_build.ps1 .\main.go
 > .\main.exe
 ```
+#### Running With Step Debugging
+```console
+> .\go_build.ps1 .\main.go
+> .\main.exe -debug
+```
 #### Executing in Virtual Machine from .vasm file
 ```console
 > .\go_build.ps1 .\main.go
@@ -54,7 +59,7 @@ PUSH : 1
 PUSH : 0
 ---- PROGRAM TRACE END ----
 
----- STACK TOP ----
+---- STACK BEG ----
 131072
 65536
 32768
@@ -106,7 +111,7 @@ func main() {
 	// Execute PROGRAM in Virtual Machine 'vm_g'
 	execute_program(&vm_g, execution_limit_steps)
 	// Dump STACK to stdout
-	print_stack(&vm_g)
+	print_stack(&vm_g, true)
 	// Dump PROGRAM inst to stdout
 	print_program_trace(&vm_g, true)
 }
@@ -115,7 +120,7 @@ func main() {
 #### Output 
 
 ```console
----- STACK TOP ----
+---- STACK BEG ----
 290
 10
 ---- STACK END ----

@@ -6,10 +6,13 @@ import (
 	"strings"
 	"strconv"
 	"flag"
+	"bufio"
+	"os"
 )
 
 const STACK_CAPACITY = 1024
 const PROGRAM_CAPACITY = 1024
+var debug bool
 
 type VM struct {
 	stack_size   int
@@ -33,6 +36,13 @@ func check_err(e error) {
     }
 }
 
+func prompt_for_debug() {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("\n-> Press Enter")
+	_, _, err := reader.ReadRune()
+	check_err(err)
+	fmt.Println()
+}
 func push(vm *VM, inst Inst) {
 	vm.STACK[vm.stack_size] = inst.Operand
 	vm.stack_size += 1
@@ -71,7 +81,7 @@ func div(vm *VM) {
 		panic("Not enough values to divide")
 	}
 	if vm.STACK[vm.stack_size-1] == 0 {
-		print_stack(vm)
+		print_stack(vm, true)
 		panic("Zero Division Error")
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] / vm.STACK[vm.stack_size-1]
@@ -125,6 +135,7 @@ func dup(vm *VM, inst Inst) {
 
 func execute_inst(vm *VM, inst Inst) {
 	if vm.inst_ptr >= vm.program_size {
+		fmt.Printf("Instruction : %s : %d\n", inst.Name, inst.Operand)
 		panic("Illegal Instruction Access")
 	}
 	if vm.stack_size < 0 {
@@ -162,14 +173,21 @@ func execute_inst(vm *VM, inst Inst) {
 
 }
 
-func print_stack(vm *VM) {
+func print_stack(vm *VM, reverse bool) {
 	if vm.stack_size < 0 {
 		panic("ERROR: Stack Underflow")
 	}
-	fmt.Println("---- STACK TOP ----")
-	for i := vm.stack_size - 1; i >= 0; i-- {
-		fmt.Println(vm.STACK[i])
-	}
+	
+	fmt.Println("---- STACK BEG ----")
+	if reverse == true {
+		for i := vm.stack_size - 1; i >= 0; i-- {
+			fmt.Println(vm.STACK[i])
+		}
+	} else {
+			for i := 0; i < vm.stack_size; i++ {
+				fmt.Println(vm.STACK[i])
+			}
+	}	
 	fmt.Println("---- STACK END ----")
 	fmt.Println()
 }
@@ -390,6 +408,12 @@ func execute_program(vm *VM, limit int) {
 	}
 	counter := 0
 	for (vm.vm_halt != 1 && counter < limit) {
+		if debug {
+			print_stack(vm, true)
+			fmt.Printf("IP : %d\n", vm.inst_ptr)
+			fmt.Printf("Instruction to be executed : `%s %d`\n", vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
+			prompt_for_debug()
+		}
 		execute_inst(vm, vm.PROGRAM[vm.inst_ptr])
 		counter += 1
 	}
@@ -417,9 +441,11 @@ func main() {
 	
 	file_path := flag.String("input", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
+	debug_flg := flag.Bool("debug", false, "Enable Debugger")
 	
 	flag.Parse()
 	
+	debug = *debug_flg
 	if *file_path == "" {
 		execution_limit_steps = 69
 		load_program_from_memory(&vm_g, prgm, program_size, true)
@@ -429,5 +455,5 @@ func main() {
 	}
 	print_program_trace(&vm_g, true)
 	execute_program(&vm_g, execution_limit_steps)
-	print_stack(&vm_g)
+	print_stack(&vm_g, false)
 }
