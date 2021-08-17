@@ -8,11 +8,14 @@ const STACK_CAPACITY = 1024
 const PROGRAM_CAPACITY = 1024
 
 type VM struct {
-	stack_size int
-	STACK      [STACK_CAPACITY]int
-	PROGRAM    [PROGRAM_CAPACITY]Inst
-	inst_ptr   int
-	vm_halt    int
+	stack_size   int
+	STACK        [STACK_CAPACITY]int
+
+	PROGRAM      [PROGRAM_CAPACITY]Inst
+	inst_ptr     int
+	program_size int
+	
+	vm_halt      int
 }
 
 type Inst struct {
@@ -23,6 +26,7 @@ type Inst struct {
 func push(vm *VM, inst Inst) {
 	vm.STACK[vm.stack_size] = inst.Operand
 	vm.stack_size += 1
+	vm.inst_ptr += 1
 }
 
 func add(vm *VM) {
@@ -31,6 +35,7 @@ func add(vm *VM) {
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-1] + vm.STACK[vm.stack_size-2]
 	vm.stack_size -= 1
+	vm.inst_ptr += 1
 }
 
 func sub(vm *VM) {
@@ -39,6 +44,7 @@ func sub(vm *VM) {
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] - vm.STACK[vm.stack_size-1]
 	vm.stack_size -= 1
+	vm.inst_ptr += 1
 }
 
 func mul(vm *VM) {
@@ -47,6 +53,7 @@ func mul(vm *VM) {
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] * vm.STACK[vm.stack_size-1]
 	vm.stack_size -= 1
+	vm.inst_ptr += 1
 }
 
 func div(vm *VM) {
@@ -59,6 +66,7 @@ func div(vm *VM) {
 	}
 	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] / vm.STACK[vm.stack_size-1]
 	vm.stack_size -= 1
+	vm.inst_ptr += 1
 }
 
 func peek(vm *VM) int {
@@ -78,11 +86,18 @@ func jmp(vm *VM, inst Inst) {
 	vm.inst_ptr = inst.Operand
 }
 
-func halt(vm *VM){
+func nop(vm *VM) {
+	vm.inst_ptr += 1
+}
+
+func halt(vm *VM) {
 	vm.vm_halt = 1
 }
 
 func execute_inst(vm *VM, inst Inst) {
+	if vm.inst_ptr >= vm.program_size {
+		panic("Illegal Instruction Access")
+	}
 	if vm.stack_size < 0 {
 		panic("Stack Underflow")
 	}
@@ -105,7 +120,7 @@ func execute_inst(vm *VM, inst Inst) {
 	case "HALT":
 		halt(vm)
 	case "NOP":
-		{}
+		nop(vm)
 	default:
 		panic("Unknown Instruction")
 	}
@@ -127,14 +142,17 @@ func print_stack(vm *VM) {
 }
 
 func print_program_trace(vm *VM, banner bool) {
-	if len(vm.PROGRAM) == 0 {
-		panic("Empty Instruction Slice")
+	if vm.program_size == 0 {
+		panic("Empty Program")
+	}
+	if vm.program_size >= PROGRAM_CAPACITY {
+		panic("Overflow: vm.program_size >= PROGRAM_CAPACITY")
 	}
 	if banner {
 		fmt.Println("---- PROGRAM TRACE BEG ----")
 	}
 	
-	for i := len(vm.PROGRAM) - 1; i >= 0; i-- {
+	for i := vm.program_size - 1; i >= 0; i-- {
 		switch vm.PROGRAM[i].Name {
 		case "PUSH":
 			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
@@ -152,6 +170,8 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "NOP":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		default:
+			panic("Unknown Instruction")
 		}
 	}
 	if banner {
@@ -170,8 +190,8 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 		if program[i].Name == "HALT" {
 			halt_flag = true
 		}
-		vm.PROGRAM[vm.inst_ptr] = program[i]
-		vm.inst_ptr += 1 
+		vm.PROGRAM[vm.program_size] = program[i]
+		vm.program_size += 1 
 	}
 	if halt_flag == false {
 		if halt_panic {
@@ -181,23 +201,23 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 	}
 }
 
-func execute_program(vm *VM) {
-	if vm.inst_ptr == 0 {
+func execute_program(vm *VM, limit int) {
+	if vm.program_size == 0 {
 		panic("No instruction to execute.. Load Program first")
 	}
 	counter := 0
-	tot_len := vm.inst_ptr
-	for (vm.vm_halt != 1 && counter < tot_len) {
-		execute_inst(vm, vm.PROGRAM[counter % tot_len])
-		// fmt.Printf("\n[%s : %d]\n",vm.PROGRAM[counter % tot_len].Name , vm.PROGRAM[counter % tot_len].Operand)
+	for (vm.vm_halt != 1 && counter < limit) {
+		// execute_inst(vm, vm.PROGRAM[counter % tot_len])
+		execute_inst(vm, vm.PROGRAM[vm.inst_ptr])
 		// print_stack(vm)
-		counter = (counter + 1) % tot_len
+		counter += 1
+		// counter = (counter + 1) % tot_len
 	}
 }
 
 func main() {
-	var initial [STACK_CAPACITY]int
-	var initial_inst [PROGRAM_CAPACITY]Inst
+	var initial_stack [STACK_CAPACITY]int
+	var initial_program [PROGRAM_CAPACITY]Inst
 	var prgm = []Inst {
 		Inst{Name: "PUSH", Operand: 10},
 		Inst{Name: "PUSH", Operand: 10},
@@ -212,9 +232,10 @@ func main() {
 	}
 	program_size := len(prgm)
 	
-	vm_g := VM{stack_size: 0, STACK: initial, PROGRAM: initial_inst, inst_ptr: 0}
+	execution_limit_steps := 69
+	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
 	load_program_from_memory(&vm_g, prgm, program_size, true)
-	execute_program(&vm_g)
+	execute_program(&vm_g, execution_limit_steps)
 	print_stack(&vm_g)
 	print_program_trace(&vm_g, true)
 }
