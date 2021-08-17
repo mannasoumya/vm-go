@@ -1,10 +1,6 @@
-# Pushing initial
 PUSH 0
 PUSH 1
-# Adding Last two of the stack
-ADD
-# Duplicating 
-DUP 0
 DUP 1
-# Loop
+DUP 1
+ADD
 JMP 2
