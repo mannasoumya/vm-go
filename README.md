@@ -1,5 +1,18 @@
 # Stack Based Virtual Machine in GO
 
+## Currently Supported Instructions
+- **PUSH**
+- **ADD**
+- **SUB**
+- **MUL**
+- **DIV**
+- **JMP**
+- **HALT**
+- **NOP**
+- **RET**
+- **DUP**
+
+
 ## Quick Start
 
 ```console
@@ -11,18 +24,56 @@
 > .\go_build.ps1 .\main.go
 > .\main.exe
 ```
+#### Executing in Virtual Machine from .vasm file
+```console
+> .\go_build.ps1 .\main.go
+> .\main.exe -input .\examples\powers_of_two.vasm -limit 71
+see .\main.exe -h for help on input paramenters
+```
+**'vasm'** Instruction Set which generated powers of 2 : [powers_of_two.vasm](./examples/powers_of_two.vasm)
+```asm
+PUSH 0
+PUSH 1
+ADD
+DUP 0
+DUP 1
+JMP 2
+```
+#### Output
+```console
+---- PROGRAM TRACE BEG ----
+JMP : 2
+DUP : 1
+DUP : 0
+ADD
+PUSH : 1
+PUSH : 0
+---- PROGRAM TRACE END ----
 
-### Currently Supported Instructions
-- **PUSH**
-- **ADD**
-- **SUB**
-- **MUL**
-- **DIV**
-- **JMP**
-- **HALT**
-- **NOP**
+---- STACK TOP ----
+131072
+65536
+32768
+16384
+8192
+4096
+2048
+1024
+512
+256
+128
+64
+32
+16
+8
+4
+2
+1
+---- STACK END ----
 
-### Sample Program
+```
+
+#### Sample Program
 
 ```go
 func main() {
@@ -57,7 +108,7 @@ func main() {
 }
 ```
 
-### Output 
+#### Output 
 
 ```console
 ---- STACK TOP ----
