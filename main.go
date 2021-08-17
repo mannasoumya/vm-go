@@ -290,6 +290,11 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
+				if len(line_split_by_space) == 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "PUSH", Operand: operand}
@@ -337,6 +342,11 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
+				if len(line_split_by_space) == 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "JMP", Operand: operand}
@@ -374,6 +384,11 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				if len(line_split_by_space) == 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
