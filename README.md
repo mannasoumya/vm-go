@@ -32,11 +32,15 @@ see .\main.exe -h for help on input paramenters
 ```
 **'vasm'** Instruction Set which generated powers of 2 : [powers_of_two.vasm](./examples/powers_of_two.vasm)
 ```asm
+# Pushing initial
 PUSH 0
 PUSH 1
+# Adding Last two of the stack
 ADD
+# Duplicating 
 DUP 0
 DUP 1
+# Loop
 JMP 2
 ```
 #### Output

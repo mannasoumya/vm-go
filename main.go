@@ -238,6 +238,19 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 	}
 }
 
+func process_comment(line string) string {
+	if line == "" {
+		return line
+	}
+	if string(line[0]) == "#" {
+		return ""
+	}
+	last_index := strings.LastIndex(line, "#")
+	if last_index > 0 {
+		return string(line[0:last_index])
+	}
+	return line
+}
 
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	dat, err := ioutil.ReadFile(file_path)
@@ -247,7 +260,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	instruction_count := 0
 	halt_flag := false
 	for i:=0; i<len(lines) ; i++ {
-		line := strings.Trim(lines[i]," ")
+		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		if line != "" {
 			line_split_by_space := strings.Split(line, " ")
 			inst_name := strings.ToUpper(line_split_by_space[0])
