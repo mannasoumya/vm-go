@@ -1,0 +1,6 @@
+PUSH 0
+PUSH 1
+ADD
+DUP 0
+DUP 1
+JMP 2
