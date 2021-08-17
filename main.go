@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-    "io/ioutil"
+	"io/ioutil"
 	"strings"
 	"strconv"
 	"flag"
@@ -262,7 +262,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "PUSH", Operand: operand}
-				vm.program_size += 1
+				
 			
 			case "ADD":
 				if len(line_split_by_space) > 1 {
@@ -271,7 +271,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "ADD"}
-				vm.program_size += 1
+				
 				
 			case "SUB":
 				if len(line_split_by_space) > 1 {
@@ -280,7 +280,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SUB"}
-				vm.program_size += 1
+				
 				
 			case "MUL":
 				if len(line_split_by_space) > 1 {
@@ -289,7 +289,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "MUL"}
-				vm.program_size += 1
+				
 				
 			case "DIV":
 				if len(line_split_by_space) > 1 {
@@ -298,7 +298,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIV"}
-				vm.program_size += 1
+				
 				
 			case "JMP":
 				if len(line_split_by_space) > 2 {
@@ -309,7 +309,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "JMP", Operand: operand}
-				vm.program_size += 1
+				
 				
 			case "HALT":
 				if len(line_split_by_space) > 1 {
@@ -319,7 +319,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				}
 				halt_flag = true
 				vm.PROGRAM[vm.program_size] = Inst{Name: "HALT"}
-				vm.program_size += 1
+				
 				
 			case "NOP":
 				if len(line_split_by_space) > 1 {
@@ -328,7 +328,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
-				vm.program_size += 1
+				
 				
 			case "RET":
 				if len(line_split_by_space) > 1 {
@@ -337,7 +337,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "RET"}
-				vm.program_size += 1
+				
 				
 			case "DUP":
 				if len(line_split_by_space) > 2 {
@@ -348,12 +348,13 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DUP", Operand: operand}
-				vm.program_size += 1
+				
 			default:
 				fmt.Printf("File : %s\n", file_path)
 				fmt.Printf("Syntax Error: Unknown Instruction near line %d : %s\n",(i+1), line)
 				panic("Unknown Instruction")
 			}
+			vm.program_size += 1
 			instruction_count += 1
 			if instruction_count >= PROGRAM_CAPACITY {
 				fmt.Printf("File : %s\n", file_path)
@@ -376,7 +377,6 @@ func execute_program(vm *VM, limit int) {
 	}
 	counter := 0
 	for (vm.vm_halt != 1 && counter < limit) {
-		// execute_inst(vm, vm.PROGRAM[counter % tot_len])
 		execute_inst(vm, vm.PROGRAM[vm.inst_ptr])
 		counter += 1
 	}
@@ -410,14 +410,11 @@ func main() {
 	if *file_path == "" {
 		execution_limit_steps = 69
 		load_program_from_memory(&vm_g, prgm, program_size, true)
-		execute_program(&vm_g, execution_limit_steps)
-		print_stack(&vm_g)
-		print_program_trace(&vm_g, true)
 	} else {
 		execution_limit_steps = *execution_limit_steps_inp
 		load_program_from_file(&vm_g, *file_path, false)
-		print_program_trace(&vm_g, true)
-		execute_program(&vm_g, execution_limit_steps)
-		print_stack(&vm_g)
 	}
+	print_program_trace(&vm_g, true)
+	execute_program(&vm_g, execution_limit_steps)
+	print_stack(&vm_g)
 }
