@@ -1,0 +1,7 @@
+PUSH 0
+PUSH 1
+label:
+    DUP 1
+    DUP 1
+    ADD
+    JMP label

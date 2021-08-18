@@ -8,10 +8,13 @@ import (
 	"flag"
 	"bufio"
 	"os"
+	"unicode"
 )
 
 const STACK_CAPACITY = 1024
 const PROGRAM_CAPACITY = 1024
+const LABEL_CAPACITY = 1024
+const UNRESOLVED_JUMPS_CAPACITY = 1024
 var debug bool
 
 type VM struct {
@@ -29,6 +32,31 @@ type Inst struct {
 	Name    string
 	Operand int
 }
+
+type Label struct {
+	Name string
+	addr int
+}
+
+type Label_Table struct {
+	labels     [LABEL_CAPACITY]Label
+	table_size int
+}
+
+var lt_g Label_Table
+
+type Unresolved_Jump struct {
+	unresolved_jmp_addr   int
+	unresolved_jump_label string
+	unresolved_jmp_line   int
+}
+
+type Unresolved_Jumps struct {
+	unresolved_jump_arr   [UNRESOLVED_JUMPS_CAPACITY]Unresolved_Jump
+	unresolved_jumps_size int 
+}
+
+var unrslvdjmps_g Unresolved_Jumps
 
 func check_err(e error) {
     if e != nil {
@@ -274,6 +302,31 @@ func process_comment(line string) string {
 	return line
 }
 
+func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string) bool {
+	if string(s[len(s)-1]) == ":" {
+		label_name := string(s[:len(s)-1])
+		lt.labels[lt.table_size] = Label{Name: label_name, addr: vm.program_size}
+		lt.table_size += 1
+		return true
+	}
+	return false
+}
+
+func find_label_in_label_table(lt Label_Table, label_name string) int {
+	for i:=0; i<lt.table_size; i++ {
+		if lt.labels[i].Name == label_name {
+			return lt.labels[i].addr
+		}
+	}
+	return -1
+}
+
+func push_to_unresolved_jump_table(vm *VM, unrslvdjmps *Unresolved_Jumps, label_name string, line_number int) {
+	tmp_uj := Unresolved_Jump{unresolved_jmp_addr: vm.program_size, unresolved_jump_label: label_name, unresolved_jmp_line: line_number}
+	unrslvdjmps.unresolved_jump_arr[unrslvdjmps.unresolved_jumps_size] = tmp_uj
+	unrslvdjmps.unresolved_jumps_size += 1
+}
+
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	dat, err := ioutil.ReadFile(file_path)
 	check_err(err)
@@ -286,7 +339,13 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		if line != "" {
 			line_split_by_space := strings.Split(line, " ")
+			label_check := check_if_label_and_push_to_label_table(vm, &lt_g, line_split_by_space[0])
+			if label_check {
+				continue
+			}
 			inst_name := strings.ToUpper(line_split_by_space[0])
+			// fmt.Println("Inst Count: ", instruction_count)
+			// fmt.Println("Program Size: ", vm.program_size)
 			switch inst_name {
 			
 			case "PUSH":
@@ -352,10 +411,16 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
-				operand , err := strconv.Atoi(line_split_by_space[1])
-				check_err(err)
-				vm.PROGRAM[vm.program_size] = Inst{Name: "JMP", Operand: operand}
-				
+				temp_s := line_split_by_space[1]
+				r := []rune(string(temp_s[0]))
+				if unicode.IsDigit(r[0]) {
+					operand , err := strconv.Atoi(line_split_by_space[1])
+					check_err(err)
+					vm.PROGRAM[vm.program_size] = Inst{Name: "JMP", Operand: operand}
+				} else {
+					vm.PROGRAM[vm.program_size] = Inst{Name: "JMP"}
+					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, (i+1))
+				}
 				
 			case "HALT":
 				if len(line_split_by_space) > 1 {
@@ -417,6 +482,17 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 			}
 		}
 	}
+
+	for i:=0; i < unrslvdjmps_g.unresolved_jumps_size; i++ {
+		ind := find_label_in_label_table(lt_g,unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jump_label)
+		if ind == -1 {
+			error_line_number := unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_line
+			fmt.Printf("Unknown Label near line %d : `%s` \n", error_line_number, unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jump_label)
+			panic("Unknown Label")
+		}
+		vm.PROGRAM[unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_addr].Operand = ind
+	}
+
 	if halt_flag == false {
 		if halt_panic {
 			print_program_trace(vm,true)
@@ -446,6 +522,8 @@ func execute_program(vm *VM, limit int) {
 func main() {
 	var initial_stack [STACK_CAPACITY]int
 	var initial_program [PROGRAM_CAPACITY]Inst
+	lt_g = Label_Table{}
+	unrslvdjmps_g = Unresolved_Jumps{}
 	var prgm = []Inst {
 		Inst{Name: "PUSH", Operand: 10},
 		Inst{Name: "PUSH", Operand: 10},
