@@ -40,13 +40,12 @@ see .\main.exe -h for help on input paramenters
 # Pushing initial
 PUSH 0
 PUSH 1
-# Adding Last two of the stack
-ADD
-# Duplicating 
-DUP 0
-DUP 1
-# Loop
-JMP 2
+# Starting Loop
+loop1:
+    ADD			# Adding Last two of the stack
+    DUP 0		# Duplicating 
+    DUP 1		# Duplicating 
+    JMP loop1
 ```
 #### Output
 ```console

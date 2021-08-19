@@ -556,6 +556,6 @@ func main() {
 		load_program_from_file(&vm_g, *file_path, false)
 	}
 	print_program_trace(&vm_g, true)
-	// execute_program(&vm_g, execution_limit_steps)
-	// print_stack(&vm_g, false)
+	execute_program(&vm_g, execution_limit_steps)
+	print_stack(&vm_g, false)
 }
