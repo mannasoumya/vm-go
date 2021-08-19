@@ -330,7 +330,7 @@ func push_to_unresolved_jump_table(vm *VM, unrslvdjmps *Unresolved_Jumps, label_
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	dat, err := ioutil.ReadFile(file_path)
 	check_err(err)
-    file_content := string(dat)
+	file_content := string(dat)
 	lines := strings.Split(strings.ReplaceAll(file_content, "\r\n", "\n"), "\n")
 	instruction_count := 0
 	halt_flag := false
@@ -556,6 +556,6 @@ func main() {
 		load_program_from_file(&vm_g, *file_path, false)
 	}
 	print_program_trace(&vm_g, true)
-	execute_program(&vm_g, execution_limit_steps)
-	print_stack(&vm_g, false)
+	// execute_program(&vm_g, execution_limit_steps)
+	// print_stack(&vm_g, false)
 }
