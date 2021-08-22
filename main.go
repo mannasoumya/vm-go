@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"os"
 	"unicode"
+	"math"
 )
 
 const STACK_CAPACITY = 1024
@@ -16,44 +17,54 @@ const PROGRAM_CAPACITY = 1024
 const LABEL_CAPACITY = 1024
 const UNRESOLVED_JUMPS_CAPACITY = 1024
 var debug bool
+const MaxUint = ^uint(0)
+const MaxInt = int(MaxUint >> 1) 
+const MinInt = -MaxInt - 1
+const MinFloat = math.SmallestNonzeroFloat64
+
+type Value_Holder struct{
+	int64holder   int64
+	float64holder float64
+	pointer       string
+}
 
 type VM struct {
-	stack_size   int
-	STACK        [STACK_CAPACITY]int
+	stack_size   int64
+	STACK        [STACK_CAPACITY]Value_Holder
 
 	PROGRAM      [PROGRAM_CAPACITY]Inst
-	inst_ptr     int
-	program_size int
+	inst_ptr     int64
+	program_size int64
 	
-	vm_halt      int
+	vm_halt      int64
 }
 
 type Inst struct {
 	Name    string
-	Operand int
+	Operand Value_Holder
 }
 
 type Label struct {
 	Name string
-	addr int
+	addr int64
 }
 
 type Label_Table struct {
 	labels     [LABEL_CAPACITY]Label
-	table_size int
+	table_size int64
 }
 
 var lt_g Label_Table
 
 type Unresolved_Jump struct {
-	unresolved_jmp_addr   int
+	unresolved_jmp_addr   int64
 	unresolved_jump_label string
-	unresolved_jmp_line   int
+	unresolved_jmp_line   int64
 }
 
 type Unresolved_Jumps struct {
 	unresolved_jump_arr   [UNRESOLVED_JUMPS_CAPACITY]Unresolved_Jump
-	unresolved_jumps_size int 
+	unresolved_jumps_size int64 
 }
 
 var unrslvdjmps_g Unresolved_Jumps
@@ -77,47 +88,47 @@ func push(vm *VM, inst Inst) {
 	vm.inst_ptr += 1
 }
 
-func add(vm *VM) {
+func addi(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to add")
 	}
-	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-1] + vm.STACK[vm.stack_size-2]
+	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-1].int64holder + vm.STACK[vm.stack_size-2].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
 }
 
-func sub(vm *VM) {
+func subi(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to subtract")
 	}
-	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] - vm.STACK[vm.stack_size-1]
+	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder - vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
 }
 
-func mul(vm *VM) {
+func muli(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to multiply")
 	}
-	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] * vm.STACK[vm.stack_size-1]
+	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder * vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
 }
 
-func div(vm *VM) {
+func divi(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to divide")
 	}
-	if vm.STACK[vm.stack_size-1] == 0 {
+	if vm.STACK[vm.stack_size-1].int64holder == 0 {
 		print_stack(vm, true)
 		panic("Zero Division Error")
 	}
-	vm.STACK[vm.stack_size-2] = vm.STACK[vm.stack_size-2] / vm.STACK[vm.stack_size-1]
+	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder / vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
 }
 
-func peek(vm *VM) int {
+func peek(vm *VM) Value_Holder {
 	if vm.stack_size == 0 {
 		panic("Empty Stack")
 	}
@@ -125,13 +136,13 @@ func peek(vm *VM) int {
 }
 
 func jmp(vm *VM, inst Inst) {
-	if inst.Operand < 0 {
+	if inst.Operand.int64holder < 0 {
 		panic("Wrong Jump Instruction. Underflow")
 	}
-	if inst.Operand >= vm.program_size {
+	if inst.Operand.int64holder >= vm.program_size {
 		panic("Wrong Jump Instruction. Overflow")
 	}
-	vm.inst_ptr = inst.Operand
+	vm.inst_ptr = inst.Operand.int64holder
 }
 
 func nop(vm *VM) {
@@ -143,20 +154,51 @@ func halt(vm *VM) {
 }
 
 func ret(vm *VM) {
-	vm.inst_ptr = vm.STACK[vm.stack_size - 1]
+	vm.inst_ptr = vm.STACK[vm.stack_size - 1].int64holder
 	vm.stack_size -= 1;
+}
+// All Operands are initialized as Value_Holder{int64holder: MinInt , float64holder: MinFloat}
+func get_operand_type_by_name(operand Value_Holder) string {
+	if operand.float64holder != float64(math.SmallestNonzeroFloat64) {
+		return "float64"
+	}
+	
+	if operand.int64holder != int64(MinInt) {
+		return "int64"
+	}
+
+	panic("Pointers/Strings Not Implemented Yes")
+}
+
+func reset_operand_except(operand *Value_Holder, name string) {
+	switch name {
+		case "int64":
+			operand = &Value_Holder{float64holder: math.SmallestNonzeroFloat64}
+		case "float64":
+			operand = &Value_Holder{int64holder: int64(MinInt)}
+	}
 }
 
 func dup(vm *VM, inst Inst) {
 	if vm.stack_size >= STACK_CAPACITY {
-		panic("Stack Overflow");
+		panic("Stack Overflow")
 	}
 	
-	if (vm.stack_size - inst.Operand <= 0) {
-		panic("Stack Underflow");
+	if (vm.stack_size - inst.Operand.int64holder <= 0) {
+		panic("Stack Underflow")
 	}
-
-	vm.STACK[vm.stack_size] = vm.STACK[vm.stack_size - 1 - inst.Operand];
+	
+	
+	inst_name_to_be_assigned := get_operand_type_by_name(vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder])
+	if inst_name_to_be_assigned == "float64" {
+		reset_operand_except(&vm.STACK[vm.stack_size],"float64")
+		vm.STACK[vm.stack_size].float64holder = vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder].float64holder
+	}
+	if  inst_name_to_be_assigned == "int64" {
+		reset_operand_except(&vm.STACK[vm.stack_size],"int64")
+		vm.STACK[vm.stack_size].int64holder = vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder].int64holder
+	}
+	
 	vm.stack_size += 1;
 	vm.inst_ptr += 1;
 }
@@ -175,14 +217,14 @@ func execute_inst(vm *VM, inst Inst) {
 	switch inst.Name {
 	case "PUSH":
 		push(vm, inst)
-	case "ADD":
-		add(vm)
-	case "SUB":
-		sub(vm)
-	case "MUL":
-		mul(vm)
-	case "DIV":
-		div(vm)
+	case "ADDI":
+		addi(vm)
+	case "SUBI":
+		subi(vm)
+	case "MULI":
+		muli(vm)
+	case "DIVI":
+		divi(vm)
 	case "JMP":
 		jmp(vm, inst)
 	case "HALT":
@@ -212,7 +254,7 @@ func print_stack(vm *VM, reverse bool) {
 			fmt.Println(vm.STACK[i])
 		}
 	} else {
-			for i := 0; i < vm.stack_size; i++ {
+			for i := int64(0); i < vm.stack_size; i++ {
 				fmt.Println(vm.STACK[i])
 			}
 	}	
@@ -234,17 +276,17 @@ func print_program_trace(vm *VM, banner bool) {
 	for i := vm.program_size - 1; i >= 0; i-- {
 		switch vm.PROGRAM[i].Name {
 		case "PUSH":
-			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
-		case "ADD":
+			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+		case "ADDI":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
-		case "SUB":
+		case "SUBI":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
-		case "MUL":
+		case "MULI":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
-		case "DIV":
+		case "DIVI":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "JMP":
-			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "HALT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "NOP":
@@ -252,7 +294,7 @@ func print_program_trace(vm *VM, banner bool) {
 		case "RET":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "DUP":
-			fmt.Printf("%s : %d \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		default:
 			panic("Unknown Instruction")
 		}
@@ -276,7 +318,7 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 		vm.PROGRAM[vm.program_size] = program[i]
 		vm.program_size += 1 
 		if debug {
-			fmt.Printf("Loaded Instruction: %s %d\n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
+			fmt.Printf("Loaded Instruction: %s : %+v\n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
 		}
 	}
 	if halt_flag == false {
@@ -312,8 +354,8 @@ func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string) b
 	return false
 }
 
-func find_label_in_label_table(lt Label_Table, label_name string) int {
-	for i:=0; i<lt.table_size; i++ {
+func find_label_in_label_table(lt Label_Table, label_name string) int64 {
+	for i := int64(0); i<lt.table_size; i++ {
 		if lt.labels[i].Name == label_name {
 			return lt.labels[i].addr
 		}
@@ -321,7 +363,7 @@ func find_label_in_label_table(lt Label_Table, label_name string) int {
 	return -1
 }
 
-func push_to_unresolved_jump_table(vm *VM, unrslvdjmps *Unresolved_Jumps, label_name string, line_number int) {
+func push_to_unresolved_jump_table(vm *VM, unrslvdjmps *Unresolved_Jumps, label_name string, line_number int64) {
 	tmp_uj := Unresolved_Jump{unresolved_jmp_addr: vm.program_size, unresolved_jump_label: label_name, unresolved_jmp_line: line_number}
 	unrslvdjmps.unresolved_jump_arr[unrslvdjmps.unresolved_jumps_size] = tmp_uj
 	unrslvdjmps.unresolved_jumps_size += 1
@@ -344,8 +386,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				continue
 			}
 			inst_name := strings.ToUpper(line_split_by_space[0])
-			// fmt.Println("Inst Count: ", instruction_count)
-			// fmt.Println("Program Size: ", vm.program_size)
+
 			switch inst_name {
 			
 			case "PUSH":
@@ -361,43 +402,44 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
-				vm.PROGRAM[vm.program_size] = Inst{Name: "PUSH", Operand: operand}
+				vm.PROGRAM[vm.program_size].Name = "PUSH"
+				vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				
 			
-			case "ADD":
+			case "ADDI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
-				vm.PROGRAM[vm.program_size] = Inst{Name: "ADD"}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "ADDI"}
 				
 				
-			case "SUB":
+			case "SUBI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
-				vm.PROGRAM[vm.program_size] = Inst{Name: "SUB"}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "SUBI"}
 				
 				
-			case "MUL":
+			case "MULI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
-				vm.PROGRAM[vm.program_size] = Inst{Name: "MUL"}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "MULI"}
 				
 				
-			case "DIV":
+			case "DIVI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
-				vm.PROGRAM[vm.program_size] = Inst{Name: "DIV"}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVI"}
 				
 				
 			case "JMP":
@@ -416,10 +458,11 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if unicode.IsDigit(r[0]) {
 					operand , err := strconv.Atoi(line_split_by_space[1])
 					check_err(err)
-					vm.PROGRAM[vm.program_size] = Inst{Name: "JMP", Operand: operand}
+					vm.PROGRAM[vm.program_size].Name = "JMP"
+					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
-					vm.PROGRAM[vm.program_size] = Inst{Name: "JMP"}
-					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, (i+1))
+					vm.PROGRAM[vm.program_size].Name = "JMP"
+					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, int64((i+1)))
 				}
 				
 			case "HALT":
@@ -463,7 +506,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
 				check_err(err)
-				vm.PROGRAM[vm.program_size] = Inst{Name: "DUP", Operand: operand}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "DUP", Operand: Value_Holder{int64holder: int64(operand)}}
 				
 			default:
 				fmt.Printf("File : %s\n", file_path)
@@ -478,19 +521,19 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				panic("Overflow")
 			}
 			if debug {
-				fmt.Printf("Loaded Instruction: %s %d\n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
+				fmt.Printf("Loaded Instruction: %s : %+v \n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
 			}
 		}
 	}
 
-	for i:=0; i < unrslvdjmps_g.unresolved_jumps_size; i++ {
+	for i:=int64(0); i < unrslvdjmps_g.unresolved_jumps_size; i++ {
 		ind := find_label_in_label_table(lt_g,unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jump_label)
 		if ind == -1 {
 			error_line_number := unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_line
 			fmt.Printf("Unknown Label near line %d : `%s` \n", error_line_number, unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jump_label)
 			panic("Unknown Label")
 		}
-		vm.PROGRAM[unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_addr].Operand = ind
+		vm.PROGRAM[unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_addr].Operand.int64holder = ind
 	}
 
 	if halt_flag == false {
@@ -511,7 +554,7 @@ func execute_program(vm *VM, limit int) {
 		if debug {
 			print_stack(vm, true)
 			fmt.Printf("IP : %d\n", vm.inst_ptr)
-			fmt.Printf("STEP(%d) Instruction to be executed : `%s %d`\n", (counter+1), vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
+			fmt.Printf("STEP(%d) Instruction to be executed : `%s : %+v`\n", (counter+1), vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
 			prompt_for_debug()
 		}
 		execute_inst(vm, vm.PROGRAM[vm.inst_ptr])
@@ -519,28 +562,38 @@ func execute_program(vm *VM, limit int) {
 	}
 }
 
+func init_all(initial_stack *[STACK_CAPACITY]Value_Holder, initial_program *[PROGRAM_CAPACITY]Inst) {
+	for i :=0; i<STACK_CAPACITY; i++ {
+		initial_stack[i] = Value_Holder{int64holder: int64(MinInt), float64holder: float64(MinFloat), pointer: ""}
+	}
+	for i :=0; i<PROGRAM_CAPACITY; i++ {
+		initial_program[i] = Inst{Name: "", Operand: Value_Holder{int64holder: int64(MinInt), float64holder: float64(MinFloat), pointer: ""}}
+	}
+}
+
 func main() {
-	var initial_stack [STACK_CAPACITY]int
+	var initial_stack [STACK_CAPACITY]Value_Holder
 	var initial_program [PROGRAM_CAPACITY]Inst
+	init_all(&initial_stack,&initial_program)
+
 	lt_g = Label_Table{}
 	unrslvdjmps_g = Unresolved_Jumps{}
-	var prgm = []Inst {
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 20},
-		Inst{Name: "ADD"},
-		Inst{Name: "MUL"},
-		Inst{Name: "NOP"},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "SUB", Operand: 10},
-		Inst{Name: "HALT"},
-	}
-	program_size := len(prgm)
-	
-	var execution_limit_steps int
+
 	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
 	
+	// var prgm = []Inst {
+	// 	Inst{Name: "PUSH", Operand: 10},
+	// 	Inst{Name: "PUSH", Operand: 10},
+	// 	Inst{Name: "PUSH", Operand: 10},
+	// 	Inst{Name: "PUSH", Operand: 20},
+	// 	Inst{Name: "ADD"},
+	// 	Inst{Name: "MUL"},
+	// 	Inst{Name: "NOP"},
+	// 	Inst{Name: "PUSH", Operand: 10},
+	// 	Inst{Name: "SUB", Operand: 10},
+	// 	Inst{Name: "HALT"},
+	// }
+	// program_size := len(prgm)
 	file_path := flag.String("input", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
 	debug_flg := flag.Bool("debug", false, "Enable Debugger")
@@ -549,13 +602,13 @@ func main() {
 	
 	debug = *debug_flg
 	if *file_path == "" {
-		execution_limit_steps = 69
-		load_program_from_memory(&vm_g, prgm, program_size, true)
+		fmt.Println("No input .vasm file is provided. Use '-h' option for help")
+		os.Exit(0)
+		// load_program_from_memory(&vm_g, prgm, program_size, true)
 	} else {
-		execution_limit_steps = *execution_limit_steps_inp
 		load_program_from_file(&vm_g, *file_path, false)
 	}
 	print_program_trace(&vm_g, true)
-	execute_program(&vm_g, execution_limit_steps)
+	execute_program(&vm_g, *execution_limit_steps_inp)
 	print_stack(&vm_g, false)
 }

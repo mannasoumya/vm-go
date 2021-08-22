@@ -2,10 +2,10 @@
 
 ## Currently Supported Instructions
 - **PUSH**
-- **ADD**
-- **SUB**
-- **MUL**
-- **DIV**
+- **ADDI**
+- **SUBI**
+- **MULI**
+- **DIVI**
 - **JMP**
 - **HALT**
 - **NOP**
@@ -30,6 +30,8 @@
 > .\main.exe -debug
 ```
 #### Executing in Virtual Machine from .vasm file
+
+See [examples](./examples) folder for more .vasm Examples
 ```console
 > .\go_build.ps1 .\main.go
 > .\main.exe -input .\examples\powers_of_two.vasm -limit 71
@@ -42,7 +44,7 @@ PUSH 0
 PUSH 1
 # Starting Loop
 loop1:
-    ADD			# Adding Last two of the stack
+    ADDI		# Adding Last two of the stack
     DUP 0		# Duplicating 
     DUP 1		# Duplicating 
     JMP loop1
@@ -50,91 +52,32 @@ loop1:
 #### Output
 ```console
 ---- PROGRAM TRACE BEG ----
-JMP : 2
-DUP : 1
-DUP : 0
-ADD
-PUSH : 1
-PUSH : 0
+JMP : {int64holder:2 float64holder:5e-324 pointer:}
+DUP : {int64holder:1 float64holder:0 pointer:}
+DUP : {int64holder:0 float64holder:0 pointer:}
+ADDI
+PUSH : {int64holder:1 float64holder:5e-324 pointer:}
+PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 ---- PROGRAM TRACE END ----
 
 ---- STACK BEG ----
-131072
-65536
-32768
-16384
-8192
-4096
-2048
-1024
-512
-256
-128
-64
-32
-16
-8
-4
-2
-1
+{1 5e-324 }
+{2 5e-324 }
+{4 5e-324 }
+{8 5e-324 }
+{16 5e-324 }
+{32 5e-324 }
+{64 5e-324 }
+{128 5e-324 }
+{256 5e-324 }
+{512 5e-324 }
+{1024 5e-324 }
+{2048 5e-324 }
+{4096 5e-324 }
+{8192 5e-324 }
+{16384 5e-324 }
+{32768 5e-324 }
+{65536 5e-324 }
+{65536 5e-324 }
+{65536 5e-324 }
 ---- STACK END ----
-
-```
-
-#### Sample Program
-
-```go
-func main() {
-	var initial_stack [STACK_CAPACITY]int // Initialise STACK
-	var initial_program [PROGRAM_CAPACITY]Inst // Initialise PROGRAM
-	// Define PROGRAM
-	var prgm = []Inst {
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "PUSH", Operand: 20},
-		Inst{Name: "ADD"},
-		Inst{Name: "MUL"},
-		Inst{Name: "NOP"},
-		Inst{Name: "PUSH", Operand: 10},
-		Inst{Name: "SUB", Operand: 10},
-		Inst{Name: "HALT"},
-	}
-	program_size := len(prgm)
-	// Set Execution Limit
-	execution_limit_steps := 69 // How many times to execute (useful for non halting Virtual Machines)
-	// Initialise Virtual Machine 'vm_g'
-	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
-	// Load above PROGRAM 'prgm' into the Virtual Machine 'vm_g'
-	load_program_from_memory(&vm_g, prgm, program_size, true)
-	// Execute PROGRAM in Virtual Machine 'vm_g'
-	execute_program(&vm_g, execution_limit_steps)
-	// Dump STACK to stdout
-	print_stack(&vm_g, true)
-	// Dump PROGRAM inst to stdout
-	print_program_trace(&vm_g, true)
-}
-```
-
-#### Output 
-
-```console
----- STACK BEG ----
-290
-10
----- STACK END ----
-
----- PROGRAM TRACE BEG ----
-HALT
-SUB
-PUSH : 10
-NOP
-MUL
-ADD
-PUSH : 20
-PUSH : 10
-PUSH : 10
-PUSH : 10
----- PROGRAM TRACE END ----
-
-```
