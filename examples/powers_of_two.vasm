@@ -1,7 +1,7 @@
 PUSH 0
 PUSH 1
 loop1:
-    ADD
+    ADDI
     DUP 0
     DUP 1
     JMP loop1
