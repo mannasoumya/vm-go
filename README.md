@@ -1,6 +1,9 @@
 # Stack Based Virtual Machine in GO
 
-## Currently Supported Instructions
+##### VASM - Assmebly Language for the Virtual Language
+## Currently Supported Instructions in VASM 
+
+*(Only 64-bit Architecture Supported)*
 - **PUSH**
 - **ADDI**
 - **SUBI**
@@ -12,7 +15,7 @@
 - **RET**
 - **DUP**
 
-
+(See [Instruction Help](#instruction-help))
 ## Quick Start
 
 ```console
@@ -78,6 +81,20 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 {16384 5e-324 }
 {32768 5e-324 }
 {65536 5e-324 }
-{65536 5e-324 }
-{65536 5e-324 }
+{131072 5e-324 }
 ---- STACK END ----
+```
+
+## Instruction Help
+
+- **PUSH** : Push Operand to Stack
+- **ADDI** : Add top two operands as integers and push it back to top of Stack
+- **SUBI** : Subtract top two operands as integers and push it back to top of Stack
+- **MULI** : Multiply top two operands as integers and push it back to top of Stack
+- **DIVI** : Divide top two operands as integers and push it back to top of Stack
+- **JMP** : Jump to label or location within Stack
+- **HALT** : Halt the Virtual Machine
+- **NOP** : Perform No Operation in Stack
+- **RET** : Point Instruction Pointer to top of Satck
+- **DUP** : Duplicate Operand from operand location of stack and push it back to top of Stack
+

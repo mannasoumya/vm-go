@@ -22,7 +22,8 @@ const MaxInt = int(MaxUint >> 1)
 const MinInt = -MaxInt - 1
 const MinFloat = math.SmallestNonzeroFloat64
 
-type Value_Holder struct{
+// This is only used because there are no 'Unions' in Golang
+type Value_Holder struct {
 	int64holder   int64
 	float64holder float64
 	pointer       string
@@ -162,11 +163,9 @@ func get_operand_type_by_name(operand Value_Holder) string {
 	if operand.float64holder != float64(math.SmallestNonzeroFloat64) {
 		return "float64"
 	}
-	
 	if operand.int64holder != int64(MinInt) {
 		return "int64"
 	}
-
 	panic("Pointers/Strings Not Implemented Yes")
 }
 
@@ -187,7 +186,6 @@ func dup(vm *VM, inst Inst) {
 	if (vm.stack_size - inst.Operand.int64holder <= 0) {
 		panic("Stack Underflow")
 	}
-	
 	
 	inst_name_to_be_assigned := get_operand_type_by_name(vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder])
 	if inst_name_to_be_assigned == "float64" {
@@ -581,19 +579,6 @@ func main() {
 
 	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
 	
-	// var prgm = []Inst {
-	// 	Inst{Name: "PUSH", Operand: 10},
-	// 	Inst{Name: "PUSH", Operand: 10},
-	// 	Inst{Name: "PUSH", Operand: 10},
-	// 	Inst{Name: "PUSH", Operand: 20},
-	// 	Inst{Name: "ADD"},
-	// 	Inst{Name: "MUL"},
-	// 	Inst{Name: "NOP"},
-	// 	Inst{Name: "PUSH", Operand: 10},
-	// 	Inst{Name: "SUB", Operand: 10},
-	// 	Inst{Name: "HALT"},
-	// }
-	// program_size := len(prgm)
 	file_path := flag.String("input", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
 	debug_flg := flag.Bool("debug", false, "Enable Debugger")
@@ -604,10 +589,8 @@ func main() {
 	if *file_path == "" {
 		fmt.Println("No input .vasm file is provided. Use '-h' option for help")
 		os.Exit(0)
-		// load_program_from_memory(&vm_g, prgm, program_size, true)
-	} else {
-		load_program_from_file(&vm_g, *file_path, false)
 	}
+	load_program_from_file(&vm_g, *file_path, false)
 	print_program_trace(&vm_g, true)
 	execute_program(&vm_g, *execution_limit_steps_inp)
 	print_stack(&vm_g, false)
