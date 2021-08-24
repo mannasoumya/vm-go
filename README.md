@@ -9,6 +9,10 @@
 - **SUBI**
 - **MULI**
 - **DIVI**
+- **ADDF**
+- **SUBF**
+- **MULF**
+- **DIVF**
 - **JMP**
 - **HALT**
 - **NOP**
@@ -87,14 +91,17 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 
 ## Instruction Help
 
-- **PUSH** : Push Operand to Stack
+- **PUSH** (Operand Any) : Push Operand to Stack
 - **ADDI** : Add top two operands as integers and push it back to top of Stack
 - **SUBI** : Subtract top two operands as integers and push it back to top of Stack
 - **MULI** : Multiply top two operands as integers and push it back to top of Stack
 - **DIVI** : Divide top two operands as integers and push it back to top of Stack
-- **JMP** : Jump to label or location within Stack
+- **ADDF** : Add top two operands as float and push it back to top of Stack
+- **SUBF** : Subtract top two operands as float and push it back to top of Stack
+- **MULF** : Multiply top two operands as float and push it back to top of Stack
+- **DIVF** : Divide top two operands as float and push it back to top of Stack
+- **JMP** (Operand Int) : Jump to label or location within Stack
 - **HALT** : Halt the Virtual Machine
 - **NOP** : Perform No Operation in Stack
 - **RET** : Point Instruction Pointer to top of Satck
-- **DUP** : Duplicate Operand from operand location of stack and push it back to top of Stack
-
+- **DUP** (Operand Int) : Duplicate Operand from operand location of stack and push it back to top of Stack
