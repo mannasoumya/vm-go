@@ -93,6 +93,10 @@ func addi(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to add")
 	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-1].int64holder + vm.STACK[vm.stack_size-2].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
@@ -102,6 +106,10 @@ func subi(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to subtract")
 	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder - vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
@@ -110,6 +118,10 @@ func subi(vm *VM) {
 func muli(vm *VM) {
 	if vm.stack_size < 2 {
 		panic("Not enough values to multiply")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
 	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder * vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
@@ -124,10 +136,78 @@ func divi(vm *VM) {
 		print_stack(vm, true)
 		panic("Zero Division Error")
 	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder / vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
 }
+
+func operand_type_check(op Value_Holder, expected_name string) bool {
+	if get_operand_type_by_name(op) == expected_name {
+		return true
+	}
+	return false
+}
+
+func addf(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values to add")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+	}
+	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-1].float64holder + vm.STACK[vm.stack_size-2].float64holder
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
+func subf(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values to subtract")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+	}
+	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-2].float64holder - vm.STACK[vm.stack_size-1].float64holder
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
+func mulf(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values to multiply")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+	}
+	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-2].float64holder * vm.STACK[vm.stack_size-1].float64holder
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
+func divf(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values to divide")
+	}
+	if vm.STACK[vm.stack_size-1].float64holder == 0.0 {
+		print_stack(vm, true)
+		panic("Zero Division Error")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+	}
+	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-2].float64holder / vm.STACK[vm.stack_size-1].float64holder
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
 
 func peek(vm *VM) Value_Holder {
 	if vm.stack_size == 0 {
@@ -223,6 +303,14 @@ func execute_inst(vm *VM, inst Inst) {
 		muli(vm)
 	case "DIVI":
 		divi(vm)
+	case "ADDF":
+		addf(vm)
+	case "SUBF":
+		subf(vm)
+	case "MULF":
+		mulf(vm)
+	case "DIVF":
+		divf(vm)
 	case "JMP":
 		jmp(vm, inst)
 	case "HALT":
@@ -282,6 +370,14 @@ func print_program_trace(vm *VM, banner bool) {
 		case "MULI":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "DIVI":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "ADDF":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "SUBF":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "MULF":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "DIVF":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "JMP":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
@@ -398,10 +494,21 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
 					panic("Syntax Error")
 				}
-				operand , err := strconv.Atoi(line_split_by_space[1])
-				check_err(err)
+				unknown_op := strings.Trim(line_split_by_space[1]," ")
+				if strings.Index(unknown_op , ".") != -1 {
+					operand , err := strconv.ParseFloat(unknown_op, 64)
+					check_err(err)
+					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
+				} else if strings.Index(unknown_op , "e") != -1 {
+					operand , err := strconv.ParseFloat(unknown_op, 64)
+					check_err(err)
+					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
+				} else {
+					operand , err := strconv.Atoi(unknown_op)
+					check_err(err)
+					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
+				}
 				vm.PROGRAM[vm.program_size].Name = "PUSH"
-				vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				
 			
 			case "ADDI":
@@ -438,7 +545,41 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVI"}
+			
+			case "ADDF":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "ADDF"}
 				
+				
+			case "SUBF":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "SUBF"}
+				
+				
+			case "MULF":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "MULF"}
+				
+				
+			case "DIVF":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVF"}	
 				
 			case "JMP":
 				if len(line_split_by_space) > 2 {
