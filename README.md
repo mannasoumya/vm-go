@@ -1,6 +1,6 @@
 # Stack Based Virtual Machine in GO
 
-##### VASM - Assmebly Language for the Virtual Language
+##### VASM - Assmebly Language for the Virtual Machine
 ## Currently Supported Instructions in VASM 
 
 *(Only 64-bit Architecture Supported)*
