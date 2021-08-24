@@ -18,6 +18,7 @@
 - **NOP**
 - **RET**
 - **DUP**
+- **SWAP**
 
 (See [Instruction Help](#instruction-help))
 ## Quick Start
@@ -89,6 +90,39 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 ---- STACK END ----
 ```
 
+#### Calculating 'e' from [e.vasm](./examples/e.vasm)
+
+```console
+> .\main.exe -input .\examples\e.vasm -limit 120
+```
+#### Output
+```console
+---- PROGRAM TRACE BEG ----
+JMP : {int64holder:3 float64holder:5e-324 pointer:}
+SWAP : {int64holder:2 float64holder:0 pointer:}
+SWAP : {int64holder:1 float64holder:0 pointer:}
+MULF
+SWAP : {int64holder:2 float64holder:0 pointer:}
+DUP : {int64holder:0 float64holder:0 pointer:}
+ADDF
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+SWAP : {int64holder:2 float64holder:0 pointer:}
+ADDF
+DIVF
+DUP : {int64holder:2 float64holder:0 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+---- PROGRAM TRACE END ----
+
+---- STACK BEG ----
+{-9223372036854775808 10 }
+{-9223372036854775808 3.6288e+06 }
+{-9223372036854775808 2.7182815255731922 }  <- Approximation of 'e' using Taylor series arour 0 and value of x=1
+---- STACK END ----
+```
+
 ## Instruction Help
 
 - **PUSH** (Operand Any) : Push Operand to Stack
@@ -105,3 +139,4 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 - **NOP** : Perform No Operation in Stack
 - **RET** : Point Instruction Pointer to top of Satck
 - **DUP** (Operand Int) : Duplicate Operand from operand location of stack and push it back to top of Stack
+- **SWAP** (Operand Int) : Swap Values of operand location and top of stack (*can be used as an accumulator*) 

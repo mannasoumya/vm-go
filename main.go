@@ -281,6 +281,18 @@ func dup(vm *VM, inst Inst) {
 	vm.inst_ptr += 1;
 }
 
+func swap(vm *VM, inst Inst) {
+	if inst.Operand.int64holder >= vm.stack_size {
+		panic("Stack Underflow")
+	}
+	a := vm.stack_size - 1
+	b := vm.stack_size - 1 - inst.Operand.int64holder
+	t := vm.STACK[a]
+	vm.STACK[a] = vm.STACK[b]
+	vm.STACK[b] = t
+	vm.inst_ptr += 1;
+}
+
 func execute_inst(vm *VM, inst Inst) {
 	if vm.inst_ptr >= vm.program_size {
 		fmt.Printf("Instruction : %s : %d\n", inst.Name, inst.Operand)
@@ -321,6 +333,8 @@ func execute_inst(vm *VM, inst Inst) {
 		ret(vm)
 	case "DUP":
 		dup(vm, inst)
+	case "SWAP":
+		swap(vm, inst)
 	default:
 		panic("Unknown Instruction")
 	}
@@ -388,6 +402,8 @@ func print_program_trace(vm *VM, banner bool) {
 		case "RET":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "DUP":
+			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+		case "SWAP":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		default:
 			panic("Unknown Instruction")
@@ -603,7 +619,23 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					vm.PROGRAM[vm.program_size].Name = "JMP"
 					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, int64((i+1)))
 				}
-				
+			
+			case "SWAP":
+				if len(line_split_by_space) > 2 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				if len(line_split_by_space) == 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				operand , err := strconv.Atoi(line_split_by_space[1])
+				check_err(err)
+				vm.PROGRAM[vm.program_size] = Inst{Name: "SWAP", Operand: Value_Holder{int64holder: int64(operand)}}
+			
+
 			case "HALT":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
