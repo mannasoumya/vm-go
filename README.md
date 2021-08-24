@@ -19,6 +19,8 @@
 - **RET**
 - **DUP**
 - **SWAP**
+- **CALL**
+- **DROP**
 
 (See [Instruction Help](#instruction-help))
 ## Quick Start
@@ -134,9 +136,11 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **SUBF** : Subtract top two operands as float and push it back to top of Stack
 - **MULF** : Multiply top two operands as float and push it back to top of Stack
 - **DIVF** : Divide top two operands as float and push it back to top of Stack
-- **JMP** (Operand Int) : Jump to label or location within Stack
+- **JMP** (Operand Int / Label) : Jump to label or location within Stack
 - **HALT** : Halt the Virtual Machine
 - **NOP** : Perform No Operation in Stack
 - **RET** : Point Instruction Pointer to top of Satck
 - **DUP** (Operand Int) : Duplicate Operand from operand location of stack and push it back to top of Stack
 - **SWAP** (Operand Int) : Swap Values of operand location and top of stack (*can be used as an accumulator*) 
+- **CALL** (Operand Int / Label) : Jump to label or funcall within Stack
+- **DROP** : Remove Value from top of Stack

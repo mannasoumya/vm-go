@@ -234,17 +234,26 @@ func halt(vm *VM) {
 	vm.vm_halt = 1
 }
 
-func ret(vm *VM) {
+func drop(vm *VM) {
 	if vm.stack_size < 1 {
 		panic("STACK UNDERFLOW")
+	}
+	vm.stack_size -= 1;
+	vm.inst_ptr += 1;
+}
+
+func ret(vm *VM) {
+	if vm.stack_size < 1 {
+		panic("Stack Underflow")
 	}
 	vm.inst_ptr = vm.STACK[vm.stack_size - 1].int64holder
 	vm.stack_size -= 1;
 }
 func call(vm *VM, inst Inst) {
 	if vm.stack_size >= STACK_CAPACITY {
-		panic("STACK OVERFLOW")
+		panic("Stack Overflow")
 	}
+	reset_operand_except(&vm.STACK[vm.stack_size], "int64")
 	vm.STACK[vm.stack_size].int64holder = vm.inst_ptr + 1;
 	vm.stack_size += 1
 	vm.inst_ptr = inst.Operand.int64holder;
@@ -341,6 +350,8 @@ func execute_inst(vm *VM, inst Inst) {
 		halt(vm)
 	case "NOP":
 		nop(vm)
+	case "DROP":
+		drop(vm)
 	case "RET":
 		ret(vm)
 	case "CALL":
@@ -414,6 +425,8 @@ func print_program_trace(vm *VM, banner bool) {
 		case "HALT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "NOP":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "DROP":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "RET":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
@@ -692,7 +705,15 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
-				
+			
+			case "DROP":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "DROP"}
+			
 				
 			case "RET":
 				if len(line_split_by_space) > 1 {

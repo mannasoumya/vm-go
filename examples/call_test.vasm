@@ -1,0 +1,15 @@
+JMP main
+
+som_func:
+    PUSH 100
+    PUSH 20
+    ADDI
+    DROP
+    RET
+
+main:
+    PUSH 10
+    CALL som_func
+    PUSH 20
+    ADDI
+    HALT
