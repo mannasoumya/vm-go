@@ -235,9 +235,21 @@ func halt(vm *VM) {
 }
 
 func ret(vm *VM) {
+	if vm.stack_size < 1 {
+		panic("STACK UNDERFLOW")
+	}
 	vm.inst_ptr = vm.STACK[vm.stack_size - 1].int64holder
 	vm.stack_size -= 1;
 }
+func call(vm *VM, inst Inst) {
+	if vm.stack_size >= STACK_CAPACITY {
+		panic("STACK OVERFLOW")
+	}
+	vm.STACK[vm.stack_size].int64holder = vm.inst_ptr + 1;
+	vm.stack_size += 1
+	vm.inst_ptr = inst.Operand.int64holder;
+}
+
 // All Operands are initialized as Value_Holder{int64holder: MinInt , float64holder: MinFloat}
 func get_operand_type_by_name(operand Value_Holder) string {
 	if operand.float64holder != float64(math.SmallestNonzeroFloat64) {
@@ -331,6 +343,8 @@ func execute_inst(vm *VM, inst Inst) {
 		nop(vm)
 	case "RET":
 		ret(vm)
+	case "CALL":
+		call(vm, inst)
 	case "DUP":
 		dup(vm, inst)
 	case "SWAP":
@@ -394,6 +408,8 @@ func print_program_trace(vm *VM, banner bool) {
 		case "DIVF":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "JMP":
+			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+		case "CALL":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "HALT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
@@ -617,6 +633,29 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
 					vm.PROGRAM[vm.program_size].Name = "JMP"
+					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, int64((i+1)))
+				}
+			
+			case "CALL":
+				if len(line_split_by_space) > 2 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				if len(line_split_by_space) == 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				temp_s := line_split_by_space[1]
+				r := []rune(string(temp_s[0]))
+				if unicode.IsDigit(r[0]) {
+					operand , err := strconv.Atoi(line_split_by_space[1])
+					check_err(err)
+					vm.PROGRAM[vm.program_size].Name = "CALL"
+					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
+				} else {
+					vm.PROGRAM[vm.program_size].Name = "CALL"
 					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, int64((i+1)))
 				}
 			
