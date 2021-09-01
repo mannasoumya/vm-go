@@ -57,18 +57,18 @@ type Label_Table struct {
 
 var lt_g Label_Table
 
-type Unresolved_Jump struct {
-	unresolved_jmp_addr   int64
-	unresolved_jump_label string
-	unresolved_jmp_line   int64
+type Deferred_Operand struct {
+	deferred_oprnd_addr   int64
+	deferred_oprnd_label string
+	deferred_oprnd_line   int64
 }
 
-type Unresolved_Jumps struct {
-	unresolved_jump_arr   [UNRESOLVED_JUMPS_CAPACITY]Unresolved_Jump
-	unresolved_jumps_size int64 
+type Deferred_Operands struct {
+	deferred_operand_arr   [UNRESOLVED_JUMPS_CAPACITY]Deferred_Operand
+	deferred_operands_size int64 
 }
 
-var unrslvdjmps_g Unresolved_Jumps
+var deferredoprnds_g Deferred_Operands
 
 func check_err(e error) {
     if e != nil {
@@ -502,10 +502,20 @@ func find_label_in_label_table(lt Label_Table, label_name string) int64 {
 	return -1
 }
 
-func push_to_unresolved_jump_table(vm *VM, unrslvdjmps *Unresolved_Jumps, label_name string, line_number int64) {
-	tmp_uj := Unresolved_Jump{unresolved_jmp_addr: vm.program_size, unresolved_jump_label: label_name, unresolved_jmp_line: line_number}
-	unrslvdjmps.unresolved_jump_arr[unrslvdjmps.unresolved_jumps_size] = tmp_uj
-	unrslvdjmps.unresolved_jumps_size += 1
+func push_to_deferred_operand_table(vm *VM, unrslvdjmps *Deferred_Operands, label_name string, line_number int64) {
+	tmp_uj := Deferred_Operand{deferred_oprnd_addr: vm.program_size, deferred_oprnd_label: label_name, deferred_oprnd_line: line_number}
+	unrslvdjmps.deferred_operand_arr[unrslvdjmps.deferred_operands_size] = tmp_uj
+	unrslvdjmps.deferred_operands_size += 1
+}
+
+func report_error(err error, line_number int, error_string string, file_path string, use_line_number bool) {
+	if err != nil {
+		if use_line_number {
+			fmt.Printf("File : %s\n", file_path)
+			fmt.Printf("ERROR: Error near line %d : %s\n", line_number, error_string)
+		}
+		panic(err)
+	}
 }
 
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
@@ -542,15 +552,15 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				unknown_op := strings.Trim(line_split_by_space[1]," ")
 				if strings.Index(unknown_op , ".") != -1 {
 					operand , err := strconv.ParseFloat(unknown_op, 64)
-					check_err(err)
+					report_error(err, (i+1), line,file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
 				} else if strings.Index(unknown_op , "e") != -1 {
 					operand , err := strconv.ParseFloat(unknown_op, 64)
-					check_err(err)
+					report_error(err, (i+1), line,file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
 				} else {
 					operand , err := strconv.Atoi(unknown_op)
-					check_err(err)
+					report_error(err, (i+1), line,file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				}
 				vm.PROGRAM[vm.program_size].Name = "PUSH"
@@ -646,7 +656,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
 					vm.PROGRAM[vm.program_size].Name = "JMP"
-					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, int64((i+1)))
+					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
 				}
 			
 			case "CALL":
@@ -669,7 +679,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
 					vm.PROGRAM[vm.program_size].Name = "CALL"
-					push_to_unresolved_jump_table(vm, &unrslvdjmps_g, temp_s, int64((i+1)))
+					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
 				}
 			
 			case "SWAP":
@@ -684,7 +694,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
-				check_err(err)
+				report_error(err, (i+1), line, file_path, true)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SWAP", Operand: Value_Holder{int64holder: int64(operand)}}
 			
 
@@ -757,14 +767,14 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 		}
 	}
 
-	for i:=int64(0); i < unrslvdjmps_g.unresolved_jumps_size; i++ {
-		ind := find_label_in_label_table(lt_g,unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jump_label)
+	for i:=int64(0); i < deferredoprnds_g.deferred_operands_size; i++ {
+		ind := find_label_in_label_table(lt_g,deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_label)
 		if ind == -1 {
-			error_line_number := unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_line
-			fmt.Printf("Unknown Label near line %d : `%s` \n", error_line_number, unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jump_label)
+			error_line_number := deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_line
+			fmt.Printf("Unknown Label near line %d : `%s` \n", error_line_number, deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_label)
 			panic("Unknown Label")
 		}
-		vm.PROGRAM[unrslvdjmps_g.unresolved_jump_arr[i].unresolved_jmp_addr].Operand.int64holder = ind
+		vm.PROGRAM[deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_addr].Operand.int64holder = ind
 	}
 
 	if halt_flag == false {
@@ -808,7 +818,7 @@ func main() {
 	init_all(&initial_stack,&initial_program)
 
 	lt_g = Label_Table{}
-	unrslvdjmps_g = Unresolved_Jumps{}
+	deferredoprnds_g = Deferred_Operands{}
 
 	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
 	
