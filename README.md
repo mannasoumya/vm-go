@@ -147,5 +147,5 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **SWAP** (Operand Int) : Swap Values of operand location and top of stack (*can be used as an accumulator*) 
 - **CALL** (Operand Int / Label) : Jump to label or funcall within Stack
 - **DROP** : Remove Value from top of Stack
-- **JMP_IF** : Jump If int64 is not 0
-- **NOT** : !0 -> 0 && !0 -> 1 on the top of the Stack
+- **JMP_IF** (Operand Int) : Jump If int64 is not 0
+- **NOT** : !0 -> 0 and !0 -> 1 on the top of the Stack
