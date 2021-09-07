@@ -711,7 +711,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				r := []rune(string(temp_s[0]))
 				if unicode.IsDigit(r[0]) {
 					operand , err := strconv.Atoi(line_split_by_space[1])
-					check_err(err)
+					report_error(err, (i+1), line, file_path, true)
 					vm.PROGRAM[vm.program_size].Name = "JMP_IF"
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
@@ -814,7 +814,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				operand , err := strconv.Atoi(line_split_by_space[1])
-				check_err(err)
+				report_error(err, (i+1), line, file_path, true)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DUP", Operand: Value_Holder{int64holder: int64(operand)}}
 				
 			default:
