@@ -238,8 +238,8 @@ func drop(vm *VM) {
 	if vm.stack_size < 1 {
 		panic("STACK UNDERFLOW")
 	}
-	vm.stack_size -= 1;
-	vm.inst_ptr += 1;
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
 }
 
 func ret(vm *VM) {
@@ -298,8 +298,8 @@ func dup(vm *VM, inst Inst) {
 		vm.STACK[vm.stack_size].int64holder = vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder].int64holder
 	}
 	
-	vm.stack_size += 1;
-	vm.inst_ptr += 1;
+	vm.stack_size += 1
+	vm.inst_ptr += 1
 }
 
 func swap(vm *VM, inst Inst) {
@@ -311,7 +311,36 @@ func swap(vm *VM, inst Inst) {
 	t := vm.STACK[a]
 	vm.STACK[a] = vm.STACK[b]
 	vm.STACK[b] = t
-	vm.inst_ptr += 1;
+	vm.inst_ptr += 1
+}
+
+func jmp_if(vm *VM, inst Inst) {
+	if inst.Operand.int64holder >= vm.program_size {
+		panic("Wrong Jump_If Instruction. Overflow")
+	}
+	if vm.stack_size < 1 {
+		panic("Wrong Jump_If Instruction. Underflow")
+	}
+	tmp_chk := operand_type_check(vm.STACK[vm.stack_size - 1], "int64") && inst.Operand.int64holder != 0
+	if  tmp_chk {
+		vm.inst_ptr = inst.Operand.int64holder
+	} else {
+		vm.inst_ptr += 1
+	}
+	vm.stack_size -= 1
+}
+
+func not(vm *VM) {
+	if vm.stack_size < 0 {
+		panic("Stack Underflow")
+	}
+	tmp_chk := operand_type_check(vm.STACK[vm.stack_size - 1], "int64")
+	if tmp_chk && vm.STACK[vm.stack_size - 1].int64holder != 0 {
+		vm.STACK[vm.stack_size - 1].int64holder = 0
+	} else {
+		vm.STACK[vm.stack_size - 1].int64holder = 1
+	}
+    vm.inst_ptr += 1
 }
 
 func execute_inst(vm *VM, inst Inst) {
@@ -346,8 +375,12 @@ func execute_inst(vm *VM, inst Inst) {
 		divf(vm)
 	case "JMP":
 		jmp(vm, inst)
+	case "JMP_IF":
+		jmp_if(vm, inst)
 	case "HALT":
 		halt(vm)
+	case "NOT":
+		not(vm)
 	case "NOP":
 		nop(vm)
 	case "DROP":
@@ -420,11 +453,15 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "JMP":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+		case "JMP_IF":
+			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "CALL":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "HALT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "NOP":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "NOT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "DROP":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
@@ -658,6 +695,29 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					vm.PROGRAM[vm.program_size].Name = "JMP"
 					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
 				}
+
+			case "JMP_IF":
+				if len(line_split_by_space) > 2 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				if len(line_split_by_space) == 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				temp_s := line_split_by_space[1]
+				r := []rune(string(temp_s[0]))
+				if unicode.IsDigit(r[0]) {
+					operand , err := strconv.Atoi(line_split_by_space[1])
+					check_err(err)
+					vm.PROGRAM[vm.program_size].Name = "JMP_IF"
+					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
+				} else {
+					vm.PROGRAM[vm.program_size].Name = "JMP_IF"
+					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
+				}
 			
 			case "CALL":
 				if len(line_split_by_space) > 2 {
@@ -715,6 +775,14 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
+			
+			case "NOT":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "NOT"}
 			
 			case "DROP":
 				if len(line_split_by_space) > 1 {
@@ -836,5 +904,5 @@ func main() {
 	load_program_from_file(&vm_g, *file_path, false)
 	print_program_trace(&vm_g, true)
 	execute_program(&vm_g, *execution_limit_steps_inp)
-	print_stack(&vm_g, false)
+	// print_stack(&vm_g, false)
 }

@@ -21,6 +21,9 @@
 - **SWAP**
 - **CALL**
 - **DROP**
+- **JMP_IF**
+- **NOT**
+
 
 (See [Instruction Help](#instruction-help))
 ## Quick Start
@@ -127,7 +130,7 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 
 ## Instruction Help
 
-- **PUSH** (Operand Any) : Push Operand to Stack
+- **PUSH** (Operand Any) : Push Operand to Stack 
 - **ADDI** : Add top two operands as integers and push it back to top of Stack
 - **SUBI** : Subtract top two operands as integers and push it back to top of Stack
 - **MULI** : Multiply top two operands as integers and push it back to top of Stack
@@ -144,3 +147,5 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **SWAP** (Operand Int) : Swap Values of operand location and top of stack (*can be used as an accumulator*) 
 - **CALL** (Operand Int / Label) : Jump to label or funcall within Stack
 - **DROP** : Remove Value from top of Stack
+- **JMP_IF** : Jump If int64 is not 0
+- **NOT** : !0 -> 0 && !0 -> 1 on the top of the Stack
