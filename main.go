@@ -967,5 +967,5 @@ func main() {
 	load_program_from_file(&vm_g, *file_path, false)
 	print_program_trace(&vm_g, true)
 	execute_program(&vm_g, *execution_limit_steps_inp)
-	// print_stack(&vm_g, false)
+	print_stack(&vm_g, false)
 }
