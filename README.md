@@ -23,6 +23,8 @@
 - **DROP**
 - **JMP_IF**
 - **NOT**
+- **EQI**
+- **EQF**
 
 
 (See [Instruction Help](#instruction-help))
@@ -124,7 +126,7 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 ---- STACK BEG ----
 {-9223372036854775808 10 }
 {-9223372036854775808 3.6288e+06 }
-{-9223372036854775808 2.7182815255731922 }  <- Approximation of 'e' using Taylor series arour 0 and value of x=1
+{-9223372036854775808 2.7182815255731922 }  <- Approximation of 'e' using Taylor series around 0 and value of x=1
 ---- STACK END ----
 ```
 
@@ -149,3 +151,5 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **DROP** : Remove Value from top of Stack
 - **JMP_IF** (Operand Int) : Jump If int64 is not 0
 - **NOT** : !0 -> 0 and !0 -> 1 on the top of the Stack
+- **EQI** : Perform Integer Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
+- **EQF** : Perform Float Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack

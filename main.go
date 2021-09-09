@@ -145,6 +145,25 @@ func divi(vm *VM) {
 	vm.inst_ptr += 1
 }
 
+func eqi(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values for equality")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: Explicitly Push Operands as Int for Integer Equality")
+	}
+	b := (vm.STACK[vm.stack_size-2].int64holder == vm.STACK[vm.stack_size-1].int64holder)
+	if b {
+		vm.STACK[vm.stack_size-2].int64holder = 1
+	} else {
+		vm.STACK[vm.stack_size-2].int64holder = 0
+	}
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
+
 func operand_type_check(op Value_Holder, expected_name string) bool {
 	if get_operand_type_by_name(op) == expected_name {
 		return true
@@ -208,6 +227,24 @@ func divf(vm *VM) {
 	vm.inst_ptr += 1
 }
 
+func eqf(vm *VM) {
+	if vm.stack_size < 2 {
+		panic("Not enough values for equality")
+	}
+	if (operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) == false {
+		print_stack(vm, true)
+		panic("Invalid Type: Explicitly Push Operands as Float for Float Equality")
+	}
+	b := (vm.STACK[vm.stack_size-2].float64holder == vm.STACK[vm.stack_size-1].float64holder)
+	reset_operand_except(&vm.STACK[vm.stack_size-2], "int64")
+	if b {
+		vm.STACK[vm.stack_size-2].int64holder = 1
+	} else {
+		vm.STACK[vm.stack_size-2].int64holder = 0
+	}
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
 
 func peek(vm *VM) Value_Holder {
 	if vm.stack_size == 0 {
@@ -343,6 +380,8 @@ func not(vm *VM) {
     vm.inst_ptr += 1
 }
 
+
+
 func execute_inst(vm *VM, inst Inst) {
 	if vm.inst_ptr >= vm.program_size {
 		fmt.Printf("Instruction : %s : %d\n", inst.Name, inst.Operand)
@@ -365,6 +404,8 @@ func execute_inst(vm *VM, inst Inst) {
 		muli(vm)
 	case "DIVI":
 		divi(vm)
+	case "EQI":
+		eqi(vm)
 	case "ADDF":
 		addf(vm)
 	case "SUBF":
@@ -373,6 +414,8 @@ func execute_inst(vm *VM, inst Inst) {
 		mulf(vm)
 	case "DIVF":
 		divf(vm)
+	case "EQF":
+		eqf(vm)
 	case "JMP":
 		jmp(vm, inst)
 	case "JMP_IF":
@@ -443,6 +486,8 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "DIVI":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "EQI":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "ADDF":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "SUBF":
@@ -450,6 +495,8 @@ func print_program_trace(vm *VM, banner bool) {
 		case "MULF":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "DIVF":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "EQF":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "JMP":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
@@ -638,6 +685,14 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVI"}
 			
+			case "EQI":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "EQI"}
+			
 			case "ADDF":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
@@ -672,6 +727,14 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVF"}	
+			
+			case "EQF":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "EQF"}	
 				
 			case "JMP":
 				if len(line_split_by_space) > 2 {
