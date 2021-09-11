@@ -938,7 +938,6 @@ func compile_program_to_binary(vm *VM, file_path string) {
 	
 	defer file.Close()
 	for i := int64(0); i < vm.program_size; i++ {
-		fmt.Println(vm.PROGRAM[i])
 		buf := new(bytes.Buffer)
 		var data = []interface{}{
 			[]byte(vm.PROGRAM[i].Name),
@@ -970,7 +969,10 @@ func compile_program_to_binary(vm *VM, file_path string) {
 		// 	// panic("Cannot write to file////Here")
 		// }
 		// writeNextBytes(file, bin_buf.Bytes())
+
 	}
+	fmt.Println("Binary Written To:", output_file_path)
+	fmt.Println()
 }
 
 func writeNextBytes(file *os.File, bytes []byte) {

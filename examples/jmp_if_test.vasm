@@ -1,0 +1,24 @@
+PUSH 69
+JMP main
+
+#1
+#2
+som_func:
+    PUSH 1
+    PUSH 1
+    ADDI
+    SWAP 1
+    RET
+
+
+main:
+    CALL som_func
+    SWAP 1
+    PUSH 1
+    SUBI
+    SWAP 1
+    PUSH 1
+    NOT
+    JMP_IF 0
+    SWAP 1
+    HALT

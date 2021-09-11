@@ -4,7 +4,7 @@ som_func:
     PUSH 100
     PUSH 20
     ADDI
-    DROP
+    SWAP 1 # Used To Return Value from function
     RET
 
 main:
