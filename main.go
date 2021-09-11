@@ -7,9 +7,12 @@ import (
 	"strconv"
 	"flag"
 	"bufio"
+	"encoding/binary"
+	"bytes"
 	"os"
 	"unicode"
 	"math"
+	"log"
 )
 
 const STACK_CAPACITY = 1024
@@ -917,6 +920,66 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	if debug { fmt.Println() }
 }
 
+func compile_program_to_binary(vm *VM, file_path string) {
+	output_file_path := strings.ReplaceAll(file_path, ".vasm", ".vm")
+	if vm.program_size == 0 {
+		panic("Empty Program.. Cannot Compile to binary")
+	}
+	file, err := os.Create(output_file_path)
+	if err != nil {
+		panic("Cannot Open file to write")
+	}
+	type inst_data struct {
+		Name_tmp string
+		int64holder_tmp int64
+		float64holder_tmp float64
+		pointer_tmp string
+	}
+	
+	defer file.Close()
+	for i := int64(0); i < vm.program_size; i++ {
+		fmt.Println(vm.PROGRAM[i])
+		buf := new(bytes.Buffer)
+		var data = []interface{}{
+			[]byte(vm.PROGRAM[i].Name),
+			int64(vm.PROGRAM[i].Operand.int64holder),
+			float64(vm.PROGRAM[i].Operand.float64holder),
+			[]byte(vm.PROGRAM[i].Operand.pointer),
+			
+		}
+		for _, v := range data {
+			err := binary.Write(buf, binary.LittleEndian, v)
+			if err != nil {
+				log.Fatal(err)
+				fmt.Println("binary.Write failed:", err)
+			}
+		}
+		writeNextBytes(file, buf.Bytes())
+		
+		// var bin_buf bytes.Buffer
+		// bin_buf := new(bytes.Buffer)
+		// tmp_s := &inst_data {
+		// 	vm.PROGRAM[i].Name,
+		// 	vm.PROGRAM[i].Operand.int64holder,
+		// 	vm.PROGRAM[i].Operand.float64holder,
+		// 	vm.PROGRAM[i].Operand.pointer,
+		// } 
+		// err := binary.Write(&bin_buf, binary.LittleEndian, tmp_s)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// 	// panic("Cannot write to file////Here")
+		// }
+		// writeNextBytes(file, bin_buf.Bytes())
+	}
+}
+
+func writeNextBytes(file *os.File, bytes []byte) {
+	_, err := file.Write(bytes)
+	if err != nil {
+		panic("Cannot write to file")
+	}
+}
+
 func execute_program(vm *VM, limit int) {
 	if vm.program_size == 0 {
 		panic("No instruction to execute.. Load Program first")
@@ -956,6 +1019,7 @@ func main() {
 	file_path := flag.String("input", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
 	debug_flg := flag.Bool("debug", false, "Enable Debugger")
+	compile_flg := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
 	
 	flag.Parse()
 	
@@ -966,6 +1030,9 @@ func main() {
 	}
 	load_program_from_file(&vm_g, *file_path, false)
 	print_program_trace(&vm_g, true)
+	if *compile_flg {
+		compile_program_to_binary(&vm_g, *file_path)
+	}
 	execute_program(&vm_g, *execution_limit_steps_inp)
 	print_stack(&vm_g, false)
 }
