@@ -12,7 +12,6 @@ import (
 	"os"
 	"unicode"
 	"math"
-	"log"
 )
 
 const STACK_CAPACITY = 1024
@@ -24,6 +23,7 @@ const MaxUint = ^uint(0)
 const MaxInt = int(MaxUint >> 1) 
 const MinInt = -MaxInt - 1
 const MinFloat = math.SmallestNonzeroFloat64
+var Inst_ARR = [21]string {"push","addi","subi","muli","divi","addf","subf","mulf","divf","jmp","halt","nop","ret","dup","swap","call","drop","jmp_if","not","eqi","eqf"}
 
 // This is only used because there are no 'Unions' in Golang
 type Value_Holder struct {
@@ -383,8 +383,6 @@ func not(vm *VM) {
     vm.inst_ptr += 1
 }
 
-
-
 func execute_inst(vm *VM, inst Inst) {
 	if vm.inst_ptr >= vm.program_size {
 		fmt.Printf("Instruction : %s : %d\n", inst.Name, inst.Operand)
@@ -570,14 +568,29 @@ func process_comment(line string) string {
 	return line
 }
 
-func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string) bool {
-	if string(s[len(s)-1]) == ":" {
-		label_name := string(s[:len(s)-1])
-		lt.labels[lt.table_size] = Label{Name: label_name, addr: vm.program_size}
-		lt.table_size += 1
-		return true
+func chk_if_tok_is_inst(token string) bool {
+	for _, el := range Inst_ARR {
+		if el == strings.ToLower(token) {
+			return true
+		}
 	}
 	return false
+}
+
+func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string, line_number int, file_path string) (bool, string) {
+	tmp_slice := strings.Split(s, ":")
+	if string(tmp_slice[0]) == s {
+		return false , s
+	}
+	label_name := strings.Trim(string(tmp_slice[0])," ")
+	if chk_if_tok_is_inst(label_name) {
+		fmt.Printf("File : %s\n", file_path)
+		fmt.Printf("ERROR: Error near line %d : `%s`\n", line_number, s)
+		panic("Label Cannot be an Instruction")
+	}
+	lt.labels[lt.table_size] = Label{Name: label_name, addr: vm.program_size}
+	lt.table_size += 1
+	return true, strings.Trim(strings.Join(tmp_slice[1:]," ")," ")
 }
 
 func find_label_in_label_table(lt Label_Table, label_name string) int64 {
@@ -590,8 +603,8 @@ func find_label_in_label_table(lt Label_Table, label_name string) int64 {
 }
 
 func push_to_deferred_operand_table(vm *VM, unrslvdjmps *Deferred_Operands, label_name string, line_number int64) {
-	tmp_uj := Deferred_Operand{deferred_oprnd_addr: vm.program_size, deferred_oprnd_label: label_name, deferred_oprnd_line: line_number}
-	unrslvdjmps.deferred_operand_arr[unrslvdjmps.deferred_operands_size] = tmp_uj
+	tmp_do := Deferred_Operand{deferred_oprnd_addr: vm.program_size, deferred_oprnd_label: label_name, deferred_oprnd_line: line_number}
+	unrslvdjmps.deferred_operand_arr[unrslvdjmps.deferred_operands_size] = tmp_do
 	unrslvdjmps.deferred_operands_size += 1
 }
 
@@ -603,6 +616,26 @@ func report_error(err error, line_number int, error_string string, file_path str
 		}
 		panic(err)
 	}
+}
+
+func peek_next_token(line string) (string,int) {
+	s := strings.Split(line, " ")
+	pos := 0
+	found := false
+	for _ , el := range s {
+		if el != "" {
+			found = true
+		}
+		if found {
+			return el, pos
+		}
+		if len(el) == 0 {
+			pos = pos + 1
+		} else {
+			pos = pos + len(el) - 1
+		}		
+	}
+	return "",-1
 }
 
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
@@ -617,7 +650,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		if line != "" {
 			line_split_by_space := strings.Split(line, " ")
-			label_check := check_if_label_and_push_to_label_table(vm, &lt_g, line_split_by_space[0])
+			label_check, _ := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i+1), file_path)
 			if label_check {
 				continue
 			}
@@ -949,8 +982,8 @@ func compile_program_to_binary(vm *VM, file_path string) {
 		for _, v := range data {
 			err := binary.Write(buf, binary.LittleEndian, v)
 			if err != nil {
-				log.Fatal(err)
 				fmt.Println("binary.Write failed:", err)
+				panic(err)
 			}
 		}
 		writeNextBytes(file, buf.Bytes())
