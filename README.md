@@ -39,10 +39,11 @@
 > .\go_build.ps1 .\main.go
 > .\main.exe
 ```
-#### Running With Step Debugging
+#### Running With Step Debugging and Also Compiling to Byte Code .vm
 ```console
 > .\go_build.ps1 .\main.go
-> .\main.exe -debug
+> .\main.exe -input .\examples\fib.vasm -debug -compile
+see generated .\examples\fib.vm 
 ```
 #### Executing in Virtual Machine from .vasm file
 
@@ -150,6 +151,6 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **CALL** (Operand Int / Label) : Jump to label or funcall within Stack
 - **DROP** : Remove Value from top of Stack
 - **JMP_IF** (Operand Int) : Jump If int64 is not 0
-- **NOT** : !0 -> 0 and !0 -> 1 on the top of the Stack
+- **NOT** : !0 -> 0 and 0 -> 1 on the top of the Stack
 - **EQI** : Perform Integer Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
 - **EQF** : Perform Float Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
