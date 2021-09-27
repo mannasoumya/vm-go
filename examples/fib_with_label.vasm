@@ -1,7 +1,8 @@
 PUSH 0
 PUSH 1
-label:
-    DUP 1
-    DUP 1
-    ADDI
-    JMP label
+label: DUP 1
+       DUP 1
+       ADDI
+       DUP 0
+       PRINT
+       JMP label

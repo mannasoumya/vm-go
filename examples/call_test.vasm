@@ -12,4 +12,6 @@ main:
     CALL som_func
     PUSH 20
     ADDI
+    PRINT
+    PRINT
     HALT

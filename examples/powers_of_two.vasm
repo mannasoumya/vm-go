@@ -1,7 +1,9 @@
-PUSH 0
-PUSH 1
+PUSH 0.0
+PUSH 1.0
 loop1:
-    ADDI
+    ADDF
     DUP 0
     DUP 1
+    DUP 0
+    PRINT
     JMP loop1
