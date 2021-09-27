@@ -23,7 +23,7 @@ const MaxUint = ^uint(0)
 const MaxInt = int(MaxUint >> 1) 
 const MinInt = -MaxInt - 1
 const MinFloat = math.SmallestNonzeroFloat64
-var Inst_ARR = [21]string {"push","addi","subi","muli","divi","addf","subf","mulf","divf","jmp","halt","nop","ret","dup","swap","call","drop","jmp_if","not","eqi","eqf"}
+var Inst_ARR = []string {"push","addi","subi","muli","divi","addf","subf","mulf","divf","jmp","halt","nop","ret","dup","swap","call","drop","jmp_if","not","eqi","eqf","print"}
 
 // This is only used because there are no 'Unions' in Golang
 type Value_Holder struct {
@@ -35,7 +35,7 @@ type Value_Holder struct {
 type VM struct {
 	stack_size   int64
 	STACK        [STACK_CAPACITY]Value_Holder
-
+	
 	PROGRAM      [PROGRAM_CAPACITY]Inst
 	inst_ptr     int64
 	program_size int64
@@ -74,9 +74,16 @@ type Deferred_Operands struct {
 var deferredoprnds_g Deferred_Operands
 
 func check_err(e error) {
-    if e != nil {
-        panic(e)
+	if e != nil {
+		panic(e)
     }
+}
+
+func assert_runtime(cond bool, message string) {
+	if cond == false {
+		fmt.Println("Runtime Assertion Error")
+		panic(message)
+	}
 }
 
 func prompt_for_debug() {
@@ -270,6 +277,22 @@ func nop(vm *VM) {
 	vm.inst_ptr += 1
 }
 
+func print(vm *VM) {
+	if vm.stack_size < 1 {
+		panic("Not enough values on the stack to print")
+	}
+	type_of_operand := get_operand_type_by_name(vm.STACK[vm.stack_size - 1])
+	if type_of_operand == "int64" {
+		fmt.Printf("%d\n",vm.STACK[vm.stack_size - 1].int64holder)
+	} else if type_of_operand == "float64" {
+		fmt.Printf("%f\n",vm.STACK[vm.stack_size - 1].float64holder)
+	} else {
+		assert_runtime(false, "Not Implemented")
+	}
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
 func halt(vm *VM) {
 	vm.vm_halt = 1
 }
@@ -437,6 +460,8 @@ func execute_inst(vm *VM, inst Inst) {
 		dup(vm, inst)
 	case "SWAP":
 		swap(vm, inst)
+	case "PRINT":
+		print(vm)
 	default:
 		panic("Unknown Instruction")
 	}
@@ -519,6 +544,8 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "SWAP":
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
+		case "PRINT":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		default:
 			panic("Unknown Instruction")
 		}
@@ -569,6 +596,7 @@ func process_comment(line string) string {
 }
 
 func chk_if_tok_is_inst(token string) bool {
+	assert_runtime(len(Inst_ARR) == 22 , "Number of Instructions have changed")
 	for _, el := range Inst_ARR {
 		if el == strings.ToLower(token) {
 			return true
@@ -649,11 +677,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	for i:=0; i<len(lines) ; i++ {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		if line != "" {
-			line_split_by_space := strings.Split(line, " ")
-			label_check, _ := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i+1), file_path)
-			if label_check {
+			label_check, new_line := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i+1), file_path)
+			line_split_by_space := strings.Split(new_line, " ")
+			if label_check && strings.Trim(new_line," ") == "" {
 				continue
 			}
+
 			inst_name := strings.ToUpper(line_split_by_space[0])
 
 			switch inst_name {
@@ -899,6 +928,14 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "RET"}
+			
+			case "PRINT":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					panic("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "PRINT"}
 				
 				
 			case "DUP":
@@ -988,21 +1025,6 @@ func compile_program_to_binary(vm *VM, file_path string) {
 		}
 		writeNextBytes(file, buf.Bytes())
 		
-		// var bin_buf bytes.Buffer
-		// bin_buf := new(bytes.Buffer)
-		// tmp_s := &inst_data {
-		// 	vm.PROGRAM[i].Name,
-		// 	vm.PROGRAM[i].Operand.int64holder,
-		// 	vm.PROGRAM[i].Operand.float64holder,
-		// 	vm.PROGRAM[i].Operand.pointer,
-		// } 
-		// err := binary.Write(&bin_buf, binary.LittleEndian, tmp_s)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// 	// panic("Cannot write to file////Here")
-		// }
-		// writeNextBytes(file, bin_buf.Bytes())
-
 	}
 	fmt.Println("Binary Written To:", output_file_path)
 	fmt.Println()
@@ -1069,5 +1091,5 @@ func main() {
 		compile_program_to_binary(&vm_g, *file_path)
 	}
 	execute_program(&vm_g, *execution_limit_steps_inp)
-	print_stack(&vm_g, false)
+	// print_stack(&vm_g, false)
 }

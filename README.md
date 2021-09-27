@@ -25,6 +25,7 @@
 - **NOT**
 - **EQI**
 - **EQF**
+- **PRINT**
 
 
 (See [Instruction Help](#instruction-help))
@@ -154,3 +155,4 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **NOT** : !0 -> 0 and 0 -> 1 on the top of the Stack
 - **EQI** : Perform Integer Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
 - **EQF** : Perform Float Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
+- **PRINT** : Prints the top of the stack and consumes it
