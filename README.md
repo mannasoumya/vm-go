@@ -4,6 +4,7 @@
 ## Currently Supported Instructions in VASM 
 
 *(Only 64-bit Architecture Supported)*
+- **DEFINE**
 - **PUSH**
 - **ADDI**
 - **SUBI**
@@ -134,6 +135,7 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 
 ## Instruction Help
 
+- **DEFINE** (Constant Name) (Operand Any) : Define Constants 
 - **PUSH** (Operand Any) : Push Operand to Stack 
 - **ADDI** : Add top two operands as integers and push it back to top of Stack
 - **SUBI** : Subtract top two operands as integers and push it back to top of Stack
