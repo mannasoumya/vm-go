@@ -1,29 +1,34 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/binary"
+	"flag"
 	"fmt"
 	"io/ioutil"
-	"strings"
-	"strconv"
-	"flag"
-	"bufio"
-	"encoding/binary"
-	"bytes"
-	"os"
-	"unicode"
 	"math"
+	"os"
+	"strconv"
+	"strings"
+	"unicode"
 )
 
 const STACK_CAPACITY = 1024
 const PROGRAM_CAPACITY = 1024
 const LABEL_CAPACITY = 1024
 const UNRESOLVED_JUMPS_CAPACITY = 1024
+
 var debug bool
+
 const MaxUint = ^uint(0)
-const MaxInt = int(MaxUint >> 1) 
+const MaxInt = int(MaxUint >> 1)
 const MinInt = -MaxInt - 1
 const MinFloat = math.SmallestNonzeroFloat64
-var Inst_ARR = []string {"push","addi","subi","muli","divi","addf","subf","mulf","divf","jmp","halt","nop","ret","dup","swap","call","drop","jmp_if","not","eqi","eqf","print"}
+
+var Inst_ARR = []string{"push", "addi", "subi", "muli", "divi", "addf", "subf", "mulf", "divf", "jmp", "halt", "nop", "ret", "dup", "swap", "call", "drop", "jmp_if", "not", "eqi", "eqf", "print"}
+var Constant_Mapping_int = make(map[string]int64)
+var Constant_Mapping_float = make(map[string]float64)
 
 // This is only used because there are no 'Unions' in Golang
 type Value_Holder struct {
@@ -33,14 +38,14 @@ type Value_Holder struct {
 }
 
 type VM struct {
-	stack_size   int64
-	STACK        [STACK_CAPACITY]Value_Holder
-	
+	stack_size int64
+	STACK      [STACK_CAPACITY]Value_Holder
+
 	PROGRAM      [PROGRAM_CAPACITY]Inst
 	inst_ptr     int64
 	program_size int64
-	
-	vm_halt      int64
+
+	vm_halt int64
 }
 
 type Inst struct {
@@ -61,14 +66,14 @@ type Label_Table struct {
 var lt_g Label_Table
 
 type Deferred_Operand struct {
-	deferred_oprnd_addr   int64
+	deferred_oprnd_addr  int64
 	deferred_oprnd_label string
-	deferred_oprnd_line   int64
+	deferred_oprnd_line  int64
 }
 
 type Deferred_Operands struct {
 	deferred_operand_arr   [UNRESOLVED_JUMPS_CAPACITY]Deferred_Operand
-	deferred_operands_size int64 
+	deferred_operands_size int64
 }
 
 var deferredoprnds_g Deferred_Operands
@@ -76,11 +81,11 @@ var deferredoprnds_g Deferred_Operands
 func check_err(e error) {
 	if e != nil {
 		panic(e)
-    }
+	}
 }
 
 func assert_runtime(cond bool, message string) {
-	if cond == false {
+	if !cond {
 		fmt.Println("Runtime Assertion Error")
 		panic(message)
 	}
@@ -173,12 +178,8 @@ func eqi(vm *VM) {
 	vm.inst_ptr += 1
 }
 
-
 func operand_type_check(op Value_Holder, expected_name string) bool {
-	if get_operand_type_by_name(op) == expected_name {
-		return true
-	}
-	return false
+	return get_operand_type_by_name(op) == expected_name
 }
 
 func addf(vm *VM) {
@@ -281,11 +282,11 @@ func print(vm *VM) {
 	if vm.stack_size < 1 {
 		panic("Not enough values on the stack to print")
 	}
-	type_of_operand := get_operand_type_by_name(vm.STACK[vm.stack_size - 1])
+	type_of_operand := get_operand_type_by_name(vm.STACK[vm.stack_size-1])
 	if type_of_operand == "int64" {
-		fmt.Printf("%d\n",vm.STACK[vm.stack_size - 1].int64holder)
+		fmt.Printf("%d\n", vm.STACK[vm.stack_size-1].int64holder)
 	} else if type_of_operand == "float64" {
-		fmt.Printf("%f\n",vm.STACK[vm.stack_size - 1].float64holder)
+		fmt.Printf("%f\n", vm.STACK[vm.stack_size-1].float64holder)
 	} else {
 		assert_runtime(false, "Not Implemented")
 	}
@@ -309,17 +310,17 @@ func ret(vm *VM) {
 	if vm.stack_size < 1 {
 		panic("Stack Underflow")
 	}
-	vm.inst_ptr = vm.STACK[vm.stack_size - 1].int64holder
-	vm.stack_size -= 1;
+	vm.inst_ptr = vm.STACK[vm.stack_size-1].int64holder
+	vm.stack_size -= 1
 }
 func call(vm *VM, inst Inst) {
 	if vm.stack_size >= STACK_CAPACITY {
 		panic("Stack Overflow")
 	}
 	reset_operand_except(&vm.STACK[vm.stack_size], "int64")
-	vm.STACK[vm.stack_size].int64holder = vm.inst_ptr + 1;
+	vm.STACK[vm.stack_size].int64holder = vm.inst_ptr + 1
 	vm.stack_size += 1
-	vm.inst_ptr = inst.Operand.int64holder;
+	vm.inst_ptr = inst.Operand.int64holder
 }
 
 // All Operands are initialized as Value_Holder{int64holder: MinInt , float64holder: MinFloat}
@@ -335,10 +336,10 @@ func get_operand_type_by_name(operand Value_Holder) string {
 
 func reset_operand_except(operand *Value_Holder, name string) {
 	switch name {
-		case "int64":
-			operand = &Value_Holder{float64holder: math.SmallestNonzeroFloat64}
-		case "float64":
-			operand = &Value_Holder{int64holder: int64(MinInt)}
+	case "int64":
+		operand = &Value_Holder{float64holder: math.SmallestNonzeroFloat64}
+	case "float64":
+		operand = &Value_Holder{int64holder: int64(MinInt)}
 	}
 }
 
@@ -346,21 +347,21 @@ func dup(vm *VM, inst Inst) {
 	if vm.stack_size >= STACK_CAPACITY {
 		panic("Stack Overflow")
 	}
-	
-	if (vm.stack_size - inst.Operand.int64holder <= 0) {
+
+	if vm.stack_size-inst.Operand.int64holder <= 0 {
 		panic("Stack Underflow")
 	}
-	
-	inst_name_to_be_assigned := get_operand_type_by_name(vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder])
+
+	inst_name_to_be_assigned := get_operand_type_by_name(vm.STACK[vm.stack_size-1-inst.Operand.int64holder])
 	if inst_name_to_be_assigned == "float64" {
-		reset_operand_except(&vm.STACK[vm.stack_size],"float64")
-		vm.STACK[vm.stack_size].float64holder = vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder].float64holder
+		reset_operand_except(&vm.STACK[vm.stack_size], "float64")
+		vm.STACK[vm.stack_size].float64holder = vm.STACK[vm.stack_size-1-inst.Operand.int64holder].float64holder
 	}
-	if  inst_name_to_be_assigned == "int64" {
-		reset_operand_except(&vm.STACK[vm.stack_size],"int64")
-		vm.STACK[vm.stack_size].int64holder = vm.STACK[vm.stack_size - 1 - inst.Operand.int64holder].int64holder
+	if inst_name_to_be_assigned == "int64" {
+		reset_operand_except(&vm.STACK[vm.stack_size], "int64")
+		vm.STACK[vm.stack_size].int64holder = vm.STACK[vm.stack_size-1-inst.Operand.int64holder].int64holder
 	}
-	
+
 	vm.stack_size += 1
 	vm.inst_ptr += 1
 }
@@ -384,8 +385,8 @@ func jmp_if(vm *VM, inst Inst) {
 	if vm.stack_size < 1 {
 		panic("Wrong Jump_If Instruction. Underflow")
 	}
-	tmp_chk := operand_type_check(vm.STACK[vm.stack_size - 1], "int64") && inst.Operand.int64holder != 0
-	if  tmp_chk {
+	tmp_chk := operand_type_check(vm.STACK[vm.stack_size-1], "int64") && inst.Operand.int64holder != 0
+	if tmp_chk {
 		vm.inst_ptr = inst.Operand.int64holder
 	} else {
 		vm.inst_ptr += 1
@@ -397,13 +398,13 @@ func not(vm *VM) {
 	if vm.stack_size < 0 {
 		panic("Stack Underflow")
 	}
-	tmp_chk := operand_type_check(vm.STACK[vm.stack_size - 1], "int64")
-	if tmp_chk && vm.STACK[vm.stack_size - 1].int64holder != 0 {
-		vm.STACK[vm.stack_size - 1].int64holder = 0
+	tmp_chk := operand_type_check(vm.STACK[vm.stack_size-1], "int64")
+	if tmp_chk && vm.STACK[vm.stack_size-1].int64holder != 0 {
+		vm.STACK[vm.stack_size-1].int64holder = 0
 	} else {
-		vm.STACK[vm.stack_size - 1].int64holder = 1
+		vm.STACK[vm.stack_size-1].int64holder = 1
 	}
-    vm.inst_ptr += 1
+	vm.inst_ptr += 1
 }
 
 func execute_inst(vm *VM, inst Inst) {
@@ -462,6 +463,8 @@ func execute_inst(vm *VM, inst Inst) {
 		swap(vm, inst)
 	case "PRINT":
 		print(vm)
+	case "DEFINE":
+		nop(vm)
 	default:
 		panic("Unknown Instruction")
 	}
@@ -474,17 +477,17 @@ func print_stack(vm *VM, reverse bool) {
 	if vm.stack_size < 0 {
 		panic("ERROR: Stack Underflow")
 	}
-	
+
 	fmt.Println("---- STACK BEG ----")
 	if reverse == true {
 		for i := vm.stack_size - 1; i >= 0; i-- {
 			fmt.Println(vm.STACK[i])
 		}
 	} else {
-			for i := int64(0); i < vm.stack_size; i++ {
-				fmt.Println(vm.STACK[i])
-			}
-	}	
+		for i := int64(0); i < vm.stack_size; i++ {
+			fmt.Println(vm.STACK[i])
+		}
+	}
 	fmt.Println("---- STACK END ----")
 	fmt.Println()
 }
@@ -499,7 +502,7 @@ func print_program_trace(vm *VM, banner bool) {
 	if banner {
 		fmt.Println("---- PROGRAM TRACE BEG ----")
 	}
-	
+
 	for i := vm.program_size - 1; i >= 0; i-- {
 		switch vm.PROGRAM[i].Name {
 		case "PUSH":
@@ -546,6 +549,8 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s : %+v \n", vm.PROGRAM[i].Name, vm.PROGRAM[i].Operand)
 		case "PRINT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "DEFINE":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		default:
 			panic("Unknown Instruction")
 		}
@@ -560,25 +565,29 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 	if program_size > PROGRAM_CAPACITY {
 		panic("Overflow")
 	}
-	if debug { fmt.Println() }
+	if debug {
+		fmt.Println()
+	}
 	halt_flag := false
 	for i := 0; i < program_size; i++ {
 		if program[i].Name == "HALT" {
 			halt_flag = true
 		}
 		vm.PROGRAM[vm.program_size] = program[i]
-		vm.program_size += 1 
+		vm.program_size += 1
 		if debug {
 			fmt.Printf("Loaded Instruction: %s : %+v\n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
 		}
 	}
 	if halt_flag == false {
 		if halt_panic {
-			print_program_trace(vm,true)
+			print_program_trace(vm, true)
 			panic("No `HALT` instruction in PROGRAM")
 		}
 	}
-	if debug { fmt.Println() }
+	if debug {
+		fmt.Println()
+	}
 }
 
 func process_comment(line string) string {
@@ -596,7 +605,7 @@ func process_comment(line string) string {
 }
 
 func chk_if_tok_is_inst(token string) bool {
-	assert_runtime(len(Inst_ARR) == 22 , "Number of Instructions have changed")
+	assert_runtime(len(Inst_ARR) == 22, "Number of Instructions have changed")
 	for _, el := range Inst_ARR {
 		if el == strings.ToLower(token) {
 			return true
@@ -608,9 +617,9 @@ func chk_if_tok_is_inst(token string) bool {
 func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string, line_number int, file_path string) (bool, string) {
 	tmp_slice := strings.Split(s, ":")
 	if string(tmp_slice[0]) == s {
-		return false , s
+		return false, s
 	}
-	label_name := strings.Trim(string(tmp_slice[0])," ")
+	label_name := strings.Trim(string(tmp_slice[0]), " ")
 	if chk_if_tok_is_inst(label_name) {
 		fmt.Printf("File : %s\n", file_path)
 		fmt.Printf("ERROR: Error near line %d : `%s`\n", line_number, s)
@@ -618,11 +627,11 @@ func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string, l
 	}
 	lt.labels[lt.table_size] = Label{Name: label_name, addr: vm.program_size}
 	lt.table_size += 1
-	return true, strings.Trim(strings.Join(tmp_slice[1:]," ")," ")
+	return true, strings.Trim(strings.Join(tmp_slice[1:], " "), " ")
 }
 
 func find_label_in_label_table(lt Label_Table, label_name string) int64 {
-	for i := int64(0); i<lt.table_size; i++ {
+	for i := int64(0); i < lt.table_size; i++ {
 		if lt.labels[i].Name == label_name {
 			return lt.labels[i].addr
 		}
@@ -646,11 +655,11 @@ func report_error(err error, line_number int, error_string string, file_path str
 	}
 }
 
-func peek_next_token(line string) (string,int) {
+func peek_next_token(line string) (string, int) {
 	s := strings.Split(line, " ")
 	pos := 0
 	found := false
-	for _ , el := range s {
+	for _, el := range s {
 		if el != "" {
 			found = true
 		}
@@ -661,9 +670,9 @@ func peek_next_token(line string) (string,int) {
 			pos = pos + 1
 		} else {
 			pos = pos + len(el) - 1
-		}		
+		}
 	}
-	return "",-1
+	return "", -1
 }
 
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
@@ -673,289 +682,322 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	lines := strings.Split(strings.ReplaceAll(file_content, "\r\n", "\n"), "\n")
 	instruction_count := 0
 	halt_flag := false
-	if debug { fmt.Println() }
-	for i:=0; i<len(lines) ; i++ {
+	if debug {
+		fmt.Println()
+	}
+	for i := 0; i < len(lines); i++ {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		if line != "" {
-			label_check, new_line := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i+1), file_path)
+			label_check, new_line := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i + 1), file_path)
 			line_split_by_space := strings.Split(new_line, " ")
-			if label_check && strings.Trim(new_line," ") == "" {
+			if label_check && strings.Trim(new_line, " ") == "" {
 				continue
 			}
 
 			inst_name := strings.ToUpper(line_split_by_space[0])
 
 			switch inst_name {
-			
+
 			case "PUSH":
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
-				unknown_op := strings.Trim(line_split_by_space[1]," ")
-				if strings.Index(unknown_op , ".") != -1 {
-					operand , err := strconv.ParseFloat(unknown_op, 64)
-					report_error(err, (i+1), line,file_path, true)
+				unknown_op := strings.Trim(line_split_by_space[1], " ")
+				if x, found_int := Constant_Mapping_int[unknown_op]; found_int {
+					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(x)
+				} else if x, found_float := Constant_Mapping_float[unknown_op]; found_float {
+					vm.PROGRAM[vm.program_size].Operand.float64holder = x
+				} else if strings.Index(unknown_op, ".") != -1 {
+					operand, err := strconv.ParseFloat(unknown_op, 64)
+					report_error(err, (i + 1), line, file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
-				} else if strings.Index(unknown_op , "e") != -1 {
-					operand , err := strconv.ParseFloat(unknown_op, 64)
-					report_error(err, (i+1), line,file_path, true)
+				} else if strings.Index(unknown_op, "e") != -1 {
+					operand, err := strconv.ParseFloat(unknown_op, 64)
+					report_error(err, (i + 1), line, file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
 				} else {
-					operand , err := strconv.Atoi(unknown_op)
-					report_error(err, (i+1), line,file_path, true)
+					operand, err := strconv.Atoi(unknown_op)
+					if err != nil {
+						fmt.Printf("File : %s\n", file_path)
+						fmt.Printf("ERROR: Error near line %d : %s\n", (i + 1), line)
+						fmt.Printf("Failed Parsing Operand. `%s` is not defined\n", unknown_op)
+						os.Exit(1)
+					}
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				}
 				vm.PROGRAM[vm.program_size].Name = "PUSH"
-				
-			
+
 			case "ADDI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "ADDI"}
-				
-				
+
 			case "SUBI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SUBI"}
-				
-				
+
 			case "MULI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "MULI"}
-				
-				
+
 			case "DIVI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVI"}
-			
+
 			case "EQI":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "EQI"}
-			
+
 			case "ADDF":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "ADDF"}
-				
-				
+
 			case "SUBF":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SUBF"}
-				
-				
+
 			case "MULF":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "MULF"}
-				
-				
+
 			case "DIVF":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
-				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVF"}	
-			
+				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVF"}
+
 			case "EQF":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
-				vm.PROGRAM[vm.program_size] = Inst{Name: "EQF"}	
-				
+				vm.PROGRAM[vm.program_size] = Inst{Name: "EQF"}
+
 			case "JMP":
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				temp_s := line_split_by_space[1]
 				r := []rune(string(temp_s[0]))
 				if unicode.IsDigit(r[0]) {
-					operand , err := strconv.Atoi(line_split_by_space[1])
+					operand, err := strconv.Atoi(line_split_by_space[1])
 					check_err(err)
 					vm.PROGRAM[vm.program_size].Name = "JMP"
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
 					vm.PROGRAM[vm.program_size].Name = "JMP"
-					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
+					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i + 1)))
 				}
+
+			case "DEFINE":
+				if len(line_split_by_space) < 3 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Not Enough Args: Invalid Syntax near line %d : %s\n", (i + 1), line)
+					panic("Syntax Error")
+				}
+				// This will change when strings are introduced
+				if len(line_split_by_space) > 3 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Invalid Syntax near line %d : %s\n", (i + 1), line)
+					panic("Syntax Error")
+				}
+				var_name := line_split_by_space[1]
+				_, found_int := Constant_Mapping_int[var_name]
+				_, found_float := Constant_Mapping_float[var_name]
+				if found_int || found_float {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Constant `%s` is already defined.\n", var_name)
+					panic("Redifinition of Constant")
+				}
+
+				unknown_op := strings.Trim(line_split_by_space[2], " ")
+				if strings.Contains(unknown_op, ".") || strings.Contains(unknown_op, "e") {
+					operand, err := strconv.ParseFloat(unknown_op, 64)
+					report_error(err, (i + 1), line, file_path, true)
+					Constant_Mapping_float[var_name] = float64(operand)
+				} else {
+					operand, err := strconv.Atoi(unknown_op)
+					report_error(err, (i + 1), line, file_path, true)
+					Constant_Mapping_int[var_name] = int64(operand)
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "DEFINE"}
 
 			case "JMP_IF":
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				temp_s := line_split_by_space[1]
 				r := []rune(string(temp_s[0]))
 				if unicode.IsDigit(r[0]) {
-					operand , err := strconv.Atoi(line_split_by_space[1])
-					report_error(err, (i+1), line, file_path, true)
+					operand, err := strconv.Atoi(line_split_by_space[1])
+					report_error(err, (i + 1), line, file_path, true)
 					vm.PROGRAM[vm.program_size].Name = "JMP_IF"
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
 					vm.PROGRAM[vm.program_size].Name = "JMP_IF"
-					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
+					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i + 1)))
 				}
-			
+
 			case "CALL":
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				temp_s := line_split_by_space[1]
 				r := []rune(string(temp_s[0]))
 				if unicode.IsDigit(r[0]) {
-					operand , err := strconv.Atoi(line_split_by_space[1])
+					operand, err := strconv.Atoi(line_split_by_space[1])
 					check_err(err)
 					vm.PROGRAM[vm.program_size].Name = "CALL"
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(operand)
 				} else {
 					vm.PROGRAM[vm.program_size].Name = "CALL"
-					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i+1)))
+					push_to_deferred_operand_table(vm, &deferredoprnds_g, temp_s, int64((i + 1)))
 				}
-			
+
 			case "SWAP":
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
-				operand , err := strconv.Atoi(line_split_by_space[1])
-				report_error(err, (i+1), line, file_path, true)
+				operand, err := strconv.Atoi(line_split_by_space[1])
+				report_error(err, (i + 1), line, file_path, true)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SWAP", Operand: Value_Holder{int64holder: int64(operand)}}
-			
 
 			case "HALT":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				halt_flag = true
 				vm.PROGRAM[vm.program_size] = Inst{Name: "HALT"}
-				
-				
+
 			case "NOP":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
-			
+
 			case "NOT":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOT"}
-			
+
 			case "DROP":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DROP"}
-			
-				
+
 			case "RET":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "RET"}
-			
+
 			case "PRINT":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "PRINT"}
-				
-				
+
 			case "DUP":
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i+1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
-				operand , err := strconv.Atoi(line_split_by_space[1])
-				report_error(err, (i+1), line, file_path, true)
+				operand, err := strconv.Atoi(line_split_by_space[1])
+				report_error(err, (i + 1), line, file_path, true)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DUP", Operand: Value_Holder{int64holder: int64(operand)}}
-				
+
 			default:
 				fmt.Printf("File : %s\n", file_path)
-				fmt.Printf("Syntax Error: Unknown Instruction near line %d : %s\n",(i+1), line)
+				fmt.Printf("Syntax Error: Unknown Instruction near line %d : %s\n", (i + 1), line)
 				panic("Unknown Instruction")
 			}
 			vm.program_size += 1
@@ -971,8 +1013,8 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 		}
 	}
 
-	for i:=int64(0); i < deferredoprnds_g.deferred_operands_size; i++ {
-		ind := find_label_in_label_table(lt_g,deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_label)
+	for i := int64(0); i < deferredoprnds_g.deferred_operands_size; i++ {
+		ind := find_label_in_label_table(lt_g, deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_label)
 		if ind == -1 {
 			error_line_number := deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_line
 			fmt.Printf("Unknown Label near line %d : `%s` \n", error_line_number, deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_label)
@@ -981,13 +1023,15 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 		vm.PROGRAM[deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_addr].Operand.int64holder = ind
 	}
 
-	if halt_flag == false {
+	if !halt_flag {
 		if halt_panic {
-			print_program_trace(vm,true)
+			print_program_trace(vm, true)
 			panic("No `HALT` instruction in PROGRAM")
 		}
 	}
-	if debug { fmt.Println() }
+	if debug {
+		fmt.Println()
+	}
 }
 
 func compile_program_to_binary(vm *VM, file_path string) {
@@ -1000,12 +1044,12 @@ func compile_program_to_binary(vm *VM, file_path string) {
 		panic("Cannot Open file to write")
 	}
 	type inst_data struct {
-		Name_tmp string
-		int64holder_tmp int64
+		Name_tmp          string
+		int64holder_tmp   int64
 		float64holder_tmp float64
-		pointer_tmp string
+		pointer_tmp       string
 	}
-	
+
 	defer file.Close()
 	for i := int64(0); i < vm.program_size; i++ {
 		buf := new(bytes.Buffer)
@@ -1014,7 +1058,6 @@ func compile_program_to_binary(vm *VM, file_path string) {
 			int64(vm.PROGRAM[i].Operand.int64holder),
 			float64(vm.PROGRAM[i].Operand.float64holder),
 			[]byte(vm.PROGRAM[i].Operand.pointer),
-			
 		}
 		for _, v := range data {
 			err := binary.Write(buf, binary.LittleEndian, v)
@@ -1024,7 +1067,7 @@ func compile_program_to_binary(vm *VM, file_path string) {
 			}
 		}
 		writeNextBytes(file, buf.Bytes())
-		
+
 	}
 	fmt.Println("Binary Written To:", output_file_path)
 	fmt.Println()
@@ -1042,11 +1085,11 @@ func execute_program(vm *VM, limit int) {
 		panic("No instruction to execute.. Load Program first")
 	}
 	counter := 0
-	for (vm.vm_halt != 1 && counter < limit) {
+	for vm.vm_halt != 1 && counter < limit {
 		if debug {
 			print_stack(vm, true)
 			fmt.Printf("IP : %d\n", vm.inst_ptr)
-			fmt.Printf("STEP(%d) Instruction to be executed : `%s : %+v`\n", (counter+1), vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
+			fmt.Printf("STEP(%d) Instruction to be executed : `%s : %+v`\n", (counter + 1), vm.PROGRAM[vm.inst_ptr].Name, vm.PROGRAM[vm.inst_ptr].Operand)
 			prompt_for_debug()
 		}
 		execute_inst(vm, vm.PROGRAM[vm.inst_ptr])
@@ -1055,10 +1098,10 @@ func execute_program(vm *VM, limit int) {
 }
 
 func init_all(initial_stack *[STACK_CAPACITY]Value_Holder, initial_program *[PROGRAM_CAPACITY]Inst) {
-	for i :=0; i<STACK_CAPACITY; i++ {
+	for i := 0; i < STACK_CAPACITY; i++ {
 		initial_stack[i] = Value_Holder{int64holder: int64(MinInt), float64holder: float64(MinFloat), pointer: ""}
 	}
-	for i :=0; i<PROGRAM_CAPACITY; i++ {
+	for i := 0; i < PROGRAM_CAPACITY; i++ {
 		initial_program[i] = Inst{Name: "", Operand: Value_Holder{int64holder: int64(MinInt), float64holder: float64(MinFloat), pointer: ""}}
 	}
 }
@@ -1066,27 +1109,29 @@ func init_all(initial_stack *[STACK_CAPACITY]Value_Holder, initial_program *[PRO
 func main() {
 	var initial_stack [STACK_CAPACITY]Value_Holder
 	var initial_program [PROGRAM_CAPACITY]Inst
-	init_all(&initial_stack,&initial_program)
+	init_all(&initial_stack, &initial_program)
 
 	lt_g = Label_Table{}
 	deferredoprnds_g = Deferred_Operands{}
 
 	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
-	
+
 	file_path := flag.String("input", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
 	debug_flg := flag.Bool("debug", false, "Enable Debugger")
 	compile_flg := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
-	
+
 	flag.Parse()
-	
+
 	debug = *debug_flg
 	if *file_path == "" {
 		fmt.Println("No input .vasm file is provided. Use '-h' option for help")
 		os.Exit(0)
 	}
 	load_program_from_file(&vm_g, *file_path, false)
-	print_program_trace(&vm_g, true)
+	if debug {
+		print_program_trace(&vm_g, true)
+	}
 	if *compile_flg {
 		compile_program_to_binary(&vm_g, *file_path)
 	}
