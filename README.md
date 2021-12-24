@@ -5,6 +5,7 @@
 
 *(Only 64-bit Architecture Supported)*
 - **DEFINE**
+- **INCLUDE**
 - **PUSH**
 - **ADDI**
 - **SUBI**
@@ -33,27 +34,27 @@
 ## Quick Start
 
 ```console
-> go build main.go
-> .\main.exe
+> go build vm-go.go
+> .\vm-go.exe
 ```
 #### Alternatively on Powershell (Build with Optimizations)
 ```console
-> .\go_build.ps1 .\main.go
-> .\main.exe
+> .\go_build.ps1 .\vm-go.go
+> .\vm-go.exe
 ```
 #### Running With Step Debugging and Also Compiling to Byte Code .vm
 ```console
-> .\go_build.ps1 .\main.go
-> .\main.exe -input .\examples\fib.vasm -debug -compile
+> .\go_build.ps1 .\vm-go.go
+> .\vm-go.exe -input .\examples\fib.vasm -debug -compile
 see generated .\examples\fib.vm 
 ```
 #### Executing in Virtual Machine from .vasm file
 
 See [examples](./examples) folder for more .vasm Examples
 ```console
-> .\go_build.ps1 .\main.go
-> .\main.exe -input .\examples\powers_of_two.vasm -limit 71
-see .\main.exe -h for help on input paramenters
+> .\go_build.ps1 .\vm-go.go
+> .\vm-go.exe -input .\examples\powers_of_two.vasm -limit 71
+see .\vm-go.exe -h for help on input paramenters
 ```
 **'vasm'** Instruction Set which generated powers of 2 : [powers_of_two.vasm](./examples/powers_of_two.vasm)
 ```asm
@@ -103,7 +104,7 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 #### Calculating 'e' from [e.vasm](./examples/e.vasm)
 
 ```console
-> .\main.exe -input .\examples\e.vasm -limit 120
+> .\vm-go.exe -input .\examples\e.vasm -limit 120
 ```
 #### Output
 ```console
@@ -136,6 +137,7 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 ## Instruction Help
 
 - **DEFINE** (Constant Name) (Operand Any) : Define Constants 
+- **INCLUDE** (Operand File Path String) : Include file path and load program from include path to VM 
 - **PUSH** (Operand Any) : Push Operand to Stack 
 - **ADDI** : Add top two operands as integers and push it back to top of Stack
 - **SUBI** : Subtract top two operands as integers and push it back to top of Stack
