@@ -31,6 +31,7 @@ const MinFloat = math.SmallestNonzeroFloat64
 var Inst_ARR = []string{"push", "addi", "subi", "muli", "divi", "addf", "subf", "mulf", "divf", "jmp", "halt", "nop", "ret", "dup", "swap", "call", "drop", "jmp_if", "not", "eqi", "eqf", "print"}
 var Constant_Mapping_int = make(map[string]int64)
 var Constant_Mapping_float = make(map[string]float64)
+var Constant_Mapping_string = make(map[string]string)
 
 type Value_Holder struct {
 	int64holder   int64
@@ -291,7 +292,7 @@ func print(vm *VM) {
 	} else if type_of_operand == "float64" {
 		fmt.Printf("%f\n", vm.STACK[vm.stack_size-1].float64holder)
 	} else {
-		assert_runtime(false, "Not Implemented")
+		fmt.Printf("%s\n", vm.STACK[vm.stack_size-1].pointer)
 	}
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
@@ -326,7 +327,7 @@ func call(vm *VM, inst Inst) {
 	vm.inst_ptr = inst.Operand.int64holder
 }
 
-// All Operands are initialized as Value_Holder{int64holder: MinInt , float64holder: MinFloat}
+// All Operands are initialized as Value_Holder{int64holder: MinInt , float64holder: MinFloat, pointer:""}
 func get_operand_type_by_name(operand Value_Holder) string {
 	if operand.float64holder != float64(math.SmallestNonzeroFloat64) {
 		return "float64"
@@ -334,7 +335,10 @@ func get_operand_type_by_name(operand Value_Holder) string {
 	if operand.int64holder != int64(MinInt) {
 		return "int64"
 	}
-	panic("Pointers/Strings Not Implemented Yes")
+	if operand.pointer != "" {
+		return "pointer"
+	}
+	panic("Unreachable")
 }
 
 func reset_operand_except(operand *Value_Holder, name string) {
@@ -343,7 +347,10 @@ func reset_operand_except(operand *Value_Holder, name string) {
 		operand = &Value_Holder{float64holder: math.SmallestNonzeroFloat64}
 	case "float64":
 		operand = &Value_Holder{int64holder: int64(MinInt)}
+	case "pointer":
+		operand = &Value_Holder{pointer: ""}
 	}
+
 }
 
 func dup(vm *VM, inst Inst) {
@@ -658,7 +665,8 @@ func report_error(err error, line_number int, error_string string, file_path str
 			fmt.Printf("File : %s\n", file_path)
 			fmt.Printf("ERROR: Error near line %d : %s\n", line_number, error_string)
 		}
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -680,6 +688,61 @@ func peek_next_token(line string) (string, int) {
 		}
 	}
 	return "", -1
+}
+
+func parse_and_load_define_operands(strs_to_process string, file_path string) (err error) {
+	var_name, pos := peek_next_token(strs_to_process)
+	if pos == -1 {
+		err = errors.New("MissingArguments")
+		return err
+	}
+	_, found_int := Constant_Mapping_int[var_name]
+	_, found_float := Constant_Mapping_float[var_name]
+	_, found_string := Constant_Mapping_string[var_name]
+	if found_int || found_float || found_string {
+		fmt.Printf("File : %s\n", file_path)
+		fmt.Printf("Constant `%s` is already defined.\n", var_name)
+		panic("Redifinition of Constant")
+	}
+	runes := []rune(strs_to_process)
+	space_pos := pos + len(var_name)
+	if space_pos >= len(runes) {
+		err = errors.New("MissingArguments")
+		return err
+	}
+	// This below check is not needed... need to rethink
+	if runes[pos+len(var_name)] != ' ' {
+		err = errors.New("MissingArguments")
+		return err
+	}
+	var operand string
+	for i := space_pos; i < len(runes); i++ {
+		operand = operand + string(runes[i])
+	}
+	operand = strings.Trim(operand, " ")
+	parsed_str, str_parse_err := parse_string_literal(operand)
+	if str_parse_err == nil {
+		Constant_Mapping_string[var_name] = parsed_str
+		return nil
+	}
+	if str_parse_err != nil {
+		if strings.Contains(operand, ".") || strings.Contains(operand, "e") {
+			operand, err := strconv.ParseFloat(operand, 64)
+			if err != nil {
+				return err
+			}
+			Constant_Mapping_float[var_name] = float64(operand)
+			return nil
+		} else {
+			operand, err := strconv.Atoi(operand)
+			if err != nil {
+				return err
+			}
+			Constant_Mapping_int[var_name] = int64(operand)
+			return nil
+		}
+	}
+	return nil
 }
 
 func parse_string_literal(str string) (string, error) {
@@ -734,15 +797,18 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					panic("Syntax Error")
 				}
 				unknown_op := strings.Trim(line_split_by_space[1], " ")
+
 				if x, found_int := Constant_Mapping_int[unknown_op]; found_int {
 					vm.PROGRAM[vm.program_size].Operand.int64holder = int64(x)
 				} else if x, found_float := Constant_Mapping_float[unknown_op]; found_float {
 					vm.PROGRAM[vm.program_size].Operand.float64holder = x
-				} else if strings.Index(unknown_op, ".") != -1 {
+				} else if x, found_str := Constant_Mapping_string[unknown_op]; found_str {
+					vm.PROGRAM[vm.program_size].Operand.pointer = x
+				} else if strings.Contains(unknown_op, ".") {
 					operand, err := strconv.ParseFloat(unknown_op, 64)
 					report_error(err, (i + 1), line, file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
-				} else if strings.Index(unknown_op, "e") != -1 {
+				} else if strings.Contains(unknown_op, "e") {
 					operand, err := strconv.ParseFloat(unknown_op, 64)
 					report_error(err, (i + 1), line, file_path, true)
 					vm.PROGRAM[vm.program_size].Operand.float64holder = operand
@@ -862,35 +928,35 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				}
 
 			case "DEFINE":
-				if len(line_split_by_space) < 3 {
+				runes := []rune(strings.Trim(line, " "))
+				first_space := -1
+				for iter := 0; iter < len(runes); iter++ {
+					if runes[iter] == ' ' {
+						first_space = iter
+						break
+					}
+				}
+				if first_space == -1 {
 					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Not Enough Args: Invalid Syntax near line %d : %s\n", (i + 1), line)
+					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					panic("Syntax Error")
 				}
-				// This will change when strings are introduced
-				if len(line_split_by_space) > 3 {
-					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
-				}
-				var_name := line_split_by_space[1]
-				_, found_int := Constant_Mapping_int[var_name]
-				_, found_float := Constant_Mapping_float[var_name]
-				if found_int || found_float {
-					fmt.Printf("File : %s\n", file_path)
-					fmt.Printf("Constant `%s` is already defined.\n", var_name)
-					panic("Redifinition of Constant")
+				strs_to_process := ""
+
+				for iter := first_space + 1; iter < len(runes); iter++ {
+					strs_to_process = strs_to_process + string(runes[iter])
 				}
 
-				unknown_op := strings.Trim(line_split_by_space[2], " ")
-				if strings.Contains(unknown_op, ".") || strings.Contains(unknown_op, "e") {
-					operand, err := strconv.ParseFloat(unknown_op, 64)
-					report_error(err, (i + 1), line, file_path, true)
-					Constant_Mapping_float[var_name] = float64(operand)
-				} else {
-					operand, err := strconv.Atoi(unknown_op)
-					report_error(err, (i + 1), line, file_path, true)
-					Constant_Mapping_int[var_name] = int64(operand)
+				strs_to_process = strings.Trim(strs_to_process, " ")
+				curr_err := parse_and_load_define_operands(strs_to_process, file_path)
+				if curr_err != nil {
+					if curr_err.Error() == "MissingArguments" {
+						fmt.Printf("File : %s\n", file_path)
+						fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
+						panic("Syntax Error")
+					} else {
+						report_error(curr_err, (i + 1), line, file_path, true)
+					}
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DEFINE"}
 
@@ -1148,6 +1214,7 @@ func init_all(initial_stack *[STACK_CAPACITY]Value_Holder, initial_program *[PRO
 	}
 	Constant_Mapping_int = make(map[string]int64)
 	Constant_Mapping_float = make(map[string]float64)
+	Constant_Mapping_string = make(map[string]string)
 }
 
 func main() {
