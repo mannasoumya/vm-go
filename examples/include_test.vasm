@@ -1,0 +1,7 @@
+INCLUDE "examples/consts.vasm"
+# DEFINE A 20
+PUSH A
+PUSH B
+PRINT
+PRINT
+HALT

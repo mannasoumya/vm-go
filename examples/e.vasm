@@ -1,0 +1,24 @@
+# n+1.0
+# n!*(n+1)
+# sum + (1.0/n!)
+   
+    PUSH 1.0    # n
+    PUSH 1.0    # n!
+    PUSH 1.0    # sum
+loop:
+    PUSH 1.0
+    DUP 2
+    DIVF
+    ADDF
+
+    SWAP 2
+    PUSH 1.0
+    ADDF
+    DUP 0
+    SWAP 2
+    MULF
+
+    SWAP 1
+    SWAP 2
+    
+    JMP loop
