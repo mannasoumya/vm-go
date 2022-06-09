@@ -37,6 +37,12 @@
 > go build vm-go.go
 > .\vm-go.exe
 ```
+#### Alternatively on Linux (Build with Optimizations)
+```console
+> chmod +x build.sh
+> ./build.sh
+> ./vm-go
+```
 #### Alternatively on Powershell (Build with Optimizations)
 ```console
 > .\go_build.ps1 .\vm-go.go
