@@ -88,6 +88,11 @@ func check_err(e error) {
 	}
 }
 
+func exit_with_one(message string) {
+	fmt.Println(message)
+	os.Exit(1)
+}
+
 func assert_runtime(cond bool, message string) {
 	if !cond {
 		fmt.Println("Runtime Assertion Error")
@@ -110,11 +115,11 @@ func push(vm *VM, inst Inst) {
 
 func addi(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to add")
+		exit_with_one("Not enough values to add")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+		exit_with_one("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
 	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-1].int64holder + vm.STACK[vm.stack_size-2].int64holder
 	vm.stack_size -= 1
@@ -123,11 +128,11 @@ func addi(vm *VM) {
 
 func subi(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to subtract")
+		exit_with_one("Not enough values to subtract")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+		exit_with_one("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
 	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder - vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
@@ -136,11 +141,11 @@ func subi(vm *VM) {
 
 func muli(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to multiply")
+		exit_with_one("Not enough values to multiply")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+		exit_with_one("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
 	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder * vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
@@ -149,15 +154,15 @@ func muli(vm *VM) {
 
 func divi(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to divide")
+		exit_with_one("Not enough values to divide")
 	}
 	if vm.STACK[vm.stack_size-1].int64holder == 0 {
 		print_stack(vm, true)
-		panic("Zero Division Error")
+		exit_with_one("Zero Division Error")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
+		exit_with_one("Invalid Type: Explicitly Push Operands as Int for Integer Operands")
 	}
 	vm.STACK[vm.stack_size-2].int64holder = vm.STACK[vm.stack_size-2].int64holder / vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
@@ -166,11 +171,11 @@ func divi(vm *VM) {
 
 func eqi(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values for equality")
+		exit_with_one("Not enough values for equality")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "int64") && operand_type_check(vm.STACK[vm.stack_size-2], "int64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: Explicitly Push Operands as Int for Integer Equality")
+		exit_with_one("Invalid Type: Explicitly Push Operands as Int for Integer Equality")
 	}
 	b := (vm.STACK[vm.stack_size-2].int64holder == vm.STACK[vm.stack_size-1].int64holder)
 	if b {
@@ -188,11 +193,11 @@ func operand_type_check(op Value_Holder, expected_name string) bool {
 
 func addf(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to add")
+		exit_with_one("Not enough values to add")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+		exit_with_one("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
 	}
 	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-1].float64holder + vm.STACK[vm.stack_size-2].float64holder
 	vm.stack_size -= 1
@@ -201,11 +206,11 @@ func addf(vm *VM) {
 
 func subf(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to subtract")
+		exit_with_one("Not enough values to subtract")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+		exit_with_one("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
 	}
 	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-2].float64holder - vm.STACK[vm.stack_size-1].float64holder
 	vm.stack_size -= 1
@@ -214,11 +219,11 @@ func subf(vm *VM) {
 
 func mulf(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to multiply")
+		exit_with_one("Not enough values to multiply")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+		exit_with_one("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
 	}
 	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-2].float64holder * vm.STACK[vm.stack_size-1].float64holder
 	vm.stack_size -= 1
@@ -227,15 +232,15 @@ func mulf(vm *VM) {
 
 func divf(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values to divide")
+		exit_with_one("Not enough values to divide")
 	}
 	if vm.STACK[vm.stack_size-1].float64holder == 0.0 {
 		print_stack(vm, true)
-		panic("Zero Division Error")
+		exit_with_one("Zero Division Error")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
+		exit_with_one("Invalid Type: 'Implicit Conversion' to Float Not Yet Supported. Explicitly Push Operands as Float")
 	}
 	vm.STACK[vm.stack_size-2].float64holder = vm.STACK[vm.stack_size-2].float64holder / vm.STACK[vm.stack_size-1].float64holder
 	vm.stack_size -= 1
@@ -244,11 +249,11 @@ func divf(vm *VM) {
 
 func eqf(vm *VM) {
 	if vm.stack_size < 2 {
-		panic("Not enough values for equality")
+		exit_with_one("Not enough values for equality")
 	}
 	if !(operand_type_check(vm.STACK[vm.stack_size-1], "float64") && operand_type_check(vm.STACK[vm.stack_size-2], "float64")) {
 		print_stack(vm, true)
-		panic("Invalid Type: Explicitly Push Operands as Float for Float Equality")
+		exit_with_one("Invalid Type: Explicitly Push Operands as Float for Float Equality")
 	}
 	b := (vm.STACK[vm.stack_size-2].float64holder == vm.STACK[vm.stack_size-1].float64holder)
 	reset_operand_except(&vm.STACK[vm.stack_size-2], "int64")
@@ -263,17 +268,17 @@ func eqf(vm *VM) {
 
 func peek(vm *VM) Value_Holder {
 	if vm.stack_size == 0 {
-		panic("Empty Stack")
+		exit_with_one("Empty Stack")
 	}
 	return vm.STACK[vm.stack_size-1]
 }
 
 func jmp(vm *VM, inst Inst) {
 	if inst.Operand.int64holder < 0 {
-		panic("Wrong Jump Instruction. Underflow")
+		exit_with_one("Wrong Jump Instruction. Underflow")
 	}
 	if inst.Operand.int64holder >= vm.program_size {
-		panic("Wrong Jump Instruction. Overflow")
+		exit_with_one("Wrong Jump Instruction. Overflow")
 	}
 	vm.inst_ptr = inst.Operand.int64holder
 }
@@ -284,7 +289,7 @@ func nop(vm *VM) {
 
 func print(vm *VM) {
 	if vm.stack_size < 1 {
-		panic("Not enough values on the stack to print")
+		exit_with_one("Not enough values on the stack to print")
 	}
 	type_of_operand := get_operand_type_by_name(vm.STACK[vm.stack_size-1])
 	if type_of_operand == "int64" {
@@ -304,7 +309,7 @@ func halt(vm *VM) {
 
 func drop(vm *VM) {
 	if vm.stack_size < 1 {
-		panic("STACK UNDERFLOW")
+		exit_with_one("STACK UNDERFLOW")
 	}
 	vm.stack_size -= 1
 	vm.inst_ptr += 1
@@ -312,14 +317,14 @@ func drop(vm *VM) {
 
 func ret(vm *VM) {
 	if vm.stack_size < 1 {
-		panic("Stack Underflow")
+		exit_with_one("Stack Underflow")
 	}
 	vm.inst_ptr = vm.STACK[vm.stack_size-1].int64holder
 	vm.stack_size -= 1
 }
 func call(vm *VM, inst Inst) {
 	if vm.stack_size >= STACK_CAPACITY {
-		panic("Stack Overflow")
+		exit_with_one("Stack Overflow")
 	}
 	reset_operand_except(&vm.STACK[vm.stack_size], "int64")
 	vm.STACK[vm.stack_size].int64holder = vm.inst_ptr + 1
@@ -355,11 +360,11 @@ func reset_operand_except(operand *Value_Holder, name string) {
 
 func dup(vm *VM, inst Inst) {
 	if vm.stack_size >= STACK_CAPACITY {
-		panic("Stack Overflow")
+		exit_with_one("Stack Overflow")
 	}
 
 	if vm.stack_size-inst.Operand.int64holder <= 0 {
-		panic("Stack Underflow")
+		exit_with_one("Stack Underflow")
 	}
 
 	inst_name_to_be_assigned := get_operand_type_by_name(vm.STACK[vm.stack_size-1-inst.Operand.int64holder])
@@ -378,7 +383,7 @@ func dup(vm *VM, inst Inst) {
 
 func swap(vm *VM, inst Inst) {
 	if inst.Operand.int64holder >= vm.stack_size {
-		panic("Stack Underflow")
+		exit_with_one("Stack Underflow")
 	}
 	a := vm.stack_size - 1
 	b := vm.stack_size - 1 - inst.Operand.int64holder
@@ -390,10 +395,10 @@ func swap(vm *VM, inst Inst) {
 
 func jmp_if(vm *VM, inst Inst) {
 	if inst.Operand.int64holder >= vm.program_size {
-		panic("Wrong Jump_If Instruction. Overflow")
+		exit_with_one("Wrong Jump_If Instruction. Overflow")
 	}
 	if vm.stack_size < 1 {
-		panic("Wrong Jump_If Instruction. Underflow")
+		exit_with_one("Wrong Jump_If Instruction. Underflow")
 	}
 	tmp_chk := operand_type_check(vm.STACK[vm.stack_size-1], "int64") && inst.Operand.int64holder != 0
 	if tmp_chk {
@@ -406,7 +411,7 @@ func jmp_if(vm *VM, inst Inst) {
 
 func not(vm *VM) {
 	if vm.stack_size < 0 {
-		panic("Stack Underflow")
+		exit_with_one("Stack Underflow")
 	}
 	tmp_chk := operand_type_check(vm.STACK[vm.stack_size-1], "int64")
 	if tmp_chk && vm.STACK[vm.stack_size-1].int64holder != 0 {
@@ -420,13 +425,13 @@ func not(vm *VM) {
 func execute_inst(vm *VM, inst Inst) {
 	if vm.inst_ptr >= vm.program_size {
 		fmt.Printf("Instruction : %s : %d\n", inst.Name, inst.Operand)
-		panic("Illegal Instruction Access")
+		exit_with_one("Illegal Instruction Access")
 	}
 	if vm.stack_size < 0 {
-		panic("Stack Underflow")
+		exit_with_one("Stack Underflow")
 	}
 	if vm.stack_size > STACK_CAPACITY {
-		panic("Stack Overflow")
+		exit_with_one("Stack Overflow")
 	}
 	switch inst.Name {
 	case "PUSH":
@@ -487,7 +492,7 @@ func execute_inst(vm *VM, inst Inst) {
 
 func print_stack(vm *VM, reverse bool) {
 	if vm.stack_size < 0 {
-		panic("ERROR: Stack Underflow")
+		exit_with_one("ERROR: Stack Underflow")
 	}
 
 	fmt.Println("---- STACK BEG ----")
@@ -506,10 +511,10 @@ func print_stack(vm *VM, reverse bool) {
 
 func print_program_trace(vm *VM, banner bool) {
 	if vm.program_size == 0 {
-		panic("Empty Program")
+		exit_with_one("Empty Program")
 	}
 	if vm.program_size >= PROGRAM_CAPACITY {
-		panic("Overflow: vm.program_size >= PROGRAM_CAPACITY")
+		exit_with_one("Overflow: vm.program_size >= PROGRAM_CAPACITY")
 	}
 	if banner {
 		fmt.Println("---- PROGRAM TRACE BEG ----")
@@ -577,7 +582,7 @@ func print_program_trace(vm *VM, banner bool) {
 
 func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_panic bool) {
 	if program_size > PROGRAM_CAPACITY {
-		panic("Overflow")
+		exit_with_one("Overflow")
 	}
 	if debug {
 		fmt.Println()
@@ -596,7 +601,7 @@ func load_program_from_memory(vm *VM, program []Inst, program_size int, halt_pan
 	if !halt_flag {
 		if halt_panic {
 			print_program_trace(vm, true)
-			panic("No `HALT` instruction in PROGRAM")
+			exit_with_one("No `HALT` instruction in PROGRAM")
 		}
 	}
 	if debug {
@@ -637,7 +642,7 @@ func check_if_label_and_push_to_label_table(vm *VM, lt *Label_Table, s string, l
 	if chk_if_tok_is_inst(label_name) {
 		fmt.Printf("File : %s\n", file_path)
 		fmt.Printf("ERROR: Error near line %d : `%s`\n", line_number, s)
-		panic("Label Cannot be an Instruction")
+		exit_with_one("Label Cannot be an Instruction")
 	}
 	lt.labels[lt.table_size] = Label{Name: label_name, addr: vm.program_size}
 	lt.table_size += 1
@@ -702,7 +707,7 @@ func parse_and_load_define_operands(strs_to_process string, file_path string) (e
 	if found_int || found_float || found_string {
 		fmt.Printf("File : %s\n", file_path)
 		fmt.Printf("Constant `%s` is already defined.\n", var_name)
-		panic("Redifinition of Constant")
+		exit_with_one("Redifinition of Constant")
 	}
 	runes := []rune(strs_to_process)
 	space_pos := pos + len(var_name)
@@ -789,12 +794,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				unknown_op := strings.Trim(line_split_by_space[1], " ")
 
@@ -828,7 +833,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "ADDI"}
 
@@ -836,7 +841,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SUBI"}
 
@@ -844,7 +849,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "MULI"}
 
@@ -852,7 +857,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVI"}
 
@@ -860,7 +865,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "EQI"}
 
@@ -868,7 +873,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "ADDF"}
 
@@ -876,7 +881,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "SUBF"}
 
@@ -884,7 +889,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "MULF"}
 
@@ -892,7 +897,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DIVF"}
 
@@ -900,7 +905,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "EQF"}
 
@@ -908,12 +913,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				temp_s := line_split_by_space[1]
 				r := []rune(string(temp_s[0]))
@@ -939,7 +944,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if first_space == -1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				strs_to_process := ""
 
@@ -953,7 +958,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					if curr_err.Error() == "MissingArguments" {
 						fmt.Printf("File : %s\n", file_path)
 						fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-						panic("Syntax Error")
+						exit_with_one("Syntax Error")
 					} else {
 						report_error(curr_err, (i + 1), line, file_path, true)
 					}
@@ -964,12 +969,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				temp_s := line_split_by_space[1]
 				r := []rune(string(temp_s[0]))
@@ -987,12 +992,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				temp_s := line_split_by_space[1]
 				r := []rune(string(temp_s[0]))
@@ -1010,12 +1015,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				operand, err := strconv.Atoi(line_split_by_space[1])
 				report_error(err, (i + 1), line, file_path, true)
@@ -1025,7 +1030,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				halt_flag = true
 				vm.PROGRAM[vm.program_size] = Inst{Name: "HALT"}
@@ -1034,7 +1039,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
 
@@ -1042,7 +1047,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "NOT"}
 
@@ -1050,7 +1055,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "DROP"}
 
@@ -1058,7 +1063,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "RET"}
 
@@ -1066,7 +1071,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				vm.PROGRAM[vm.program_size] = Inst{Name: "PRINT"}
 
@@ -1074,12 +1079,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				operand, err := strconv.Atoi(line_split_by_space[1])
 				report_error(err, (i + 1), line, file_path, true)
@@ -1089,12 +1094,12 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 				if len(line_split_by_space) > 2 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Too Many Args or Extra Spaces: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				if len(line_split_by_space) == 1 {
 					fmt.Printf("File : %s\n", file_path)
 					fmt.Printf("Missing Arguments: Invalid Syntax near line %d : %s\n", (i + 1), line)
-					panic("Syntax Error")
+					exit_with_one("Syntax Error")
 				}
 				include_file_path, err := parse_string_literal(line_split_by_space[1])
 				report_error(err, (i + 1), line, file_path, true)
@@ -1106,14 +1111,14 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 			default:
 				fmt.Printf("File : %s\n", file_path)
 				fmt.Printf("Syntax Error: Unknown Instruction near line %d : %s\n", (i + 1), line)
-				panic("Unknown Instruction")
+				exit_with_one("Unknown Instruction")
 			}
 			vm.program_size += 1
 			instruction_count += 1
 			if instruction_count >= PROGRAM_CAPACITY {
 				fmt.Printf("File : %s\n", file_path)
 				fmt.Printf("Number of Instructions is greater than PROGRAM CAPACITY = %d", PROGRAM_CAPACITY)
-				panic("Overflow")
+				exit_with_one("Overflow")
 			}
 			if debug {
 				fmt.Printf("Loaded Instruction: %s : %+v \n", vm.PROGRAM[vm.program_size-1].Name, vm.PROGRAM[vm.program_size-1].Operand)
@@ -1126,7 +1131,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 		if ind == -1 {
 			error_line_number := deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_line
 			fmt.Printf("Unknown Label near line %d : `%s` \n", error_line_number, deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_label)
-			panic("Unknown Label")
+			exit_with_one("Unknown Label")
 		}
 		vm.PROGRAM[deferredoprnds_g.deferred_operand_arr[i].deferred_oprnd_addr].Operand.int64holder = ind
 	}
@@ -1134,7 +1139,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	if !halt_flag {
 		if halt_panic {
 			print_program_trace(vm, true)
-			panic("No `HALT` instruction in PROGRAM")
+			exit_with_one("No `HALT` instruction in PROGRAM")
 		}
 	}
 	if debug {
@@ -1145,11 +1150,11 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 func compile_program_to_binary(vm *VM, file_path string) {
 	output_file_path := strings.ReplaceAll(file_path, ".vasm", ".vm")
 	if vm.program_size == 0 {
-		panic("Empty Program.. Cannot Compile to binary")
+		exit_with_one("Empty Program.. Cannot Compile to binary")
 	}
 	file, err := os.Create(output_file_path)
 	if err != nil {
-		panic("Cannot Open file to write")
+		exit_with_one("Cannot Open file to write")
 	}
 	// type inst_data struct {
 	// 	Name_tmp          string
@@ -1184,13 +1189,13 @@ func compile_program_to_binary(vm *VM, file_path string) {
 func writeNextBytes(file *os.File, bytes []byte) {
 	_, err := file.Write(bytes)
 	if err != nil {
-		panic("Cannot write to file")
+		exit_with_one("Cannot write to file")
 	}
 }
 
 func execute_program(vm *VM, limit int) {
 	if vm.program_size == 0 {
-		panic("No instruction to execute.. Load Program first")
+		exit_with_one("No instruction to execute.. Load Program first")
 	}
 	counter := 0
 	for vm.vm_halt != 1 && counter < limit {
