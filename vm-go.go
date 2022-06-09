@@ -779,6 +779,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	}
 	for i := 0; i < len(lines); i++ {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
+		line =  strings.Trim(line,"\t")
 		if line != "" {
 			label_check, new_line := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i + 1), file_path)
 			line_split_by_space := strings.Split(new_line, " ")
