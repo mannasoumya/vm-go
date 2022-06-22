@@ -17,6 +17,7 @@
 - **DIVF**
 - **JMP**
 - **HALT**
+- **IGNORE_HALT**
 - **NOP**
 - **RET**
 - **DUP**
@@ -155,6 +156,7 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **DIVF** : Divide top two operands as float and push it back to top of Stack
 - **JMP** (Operand Int / Label) : Jump to label or location within Stack
 - **HALT** : Halt the Virtual Machine
+- **IGNORE_HALT** : Ignore any HALT instruction in the file
 - **NOP** : Perform No Operation in Stack
 - **RET** : Point Instruction Pointer to top of Satck
 - **DUP** (Operand Int) : Duplicate Operand from operand location of stack and push it back to top of Stack
