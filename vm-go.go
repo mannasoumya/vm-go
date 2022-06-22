@@ -89,8 +89,12 @@ func check_err(e error) {
 }
 
 func exit_with_one(message string) {
-	fmt.Println(message)
-	os.Exit(1)
+	if debug {
+		panic(message)
+	} else {
+		fmt.Println(message)
+		os.Exit(1)
+	}
 }
 
 func assert_runtime(cond bool, message string) {
@@ -1218,8 +1222,8 @@ func init_all(initial_stack *[STACK_CAPACITY]Value_Holder, initial_program *[PRO
 	for i := 0; i < PROGRAM_CAPACITY; i++ {
 		initial_program[i] = Inst{Name: "", Operand: Value_Holder{int64holder: int64(MinInt), float64holder: float64(MinFloat), pointer: ""}}
 	}
-	Constant_Mapping_int = make(map[string]int64)
-	Constant_Mapping_float = make(map[string]float64)
+	Constant_Mapping_int    = make(map[string]int64)
+	Constant_Mapping_float  = make(map[string]float64)
 	Constant_Mapping_string = make(map[string]string)
 }
 
@@ -1233,10 +1237,10 @@ func main() {
 
 	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
 
-	file_path := flag.String("input", "", ".vasm FILE PATH")
+	file_path                 := flag.String("i", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
-	debug_flg := flag.Bool("debug", false, "Enable Debugger")
-	compile_flg := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
+	debug_flg                 := flag.Bool("debug", false, "Enable Debugger")
+	compile_flg               := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
 
 	flag.Parse()
 
