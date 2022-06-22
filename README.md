@@ -51,7 +51,7 @@
 #### Running With Step Debugging and Also Compiling to Byte Code .vm
 ```console
 > .\go_build.ps1 .\vm-go.go
-> .\vm-go.exe -input .\examples\fib.vasm -debug -compile
+> .\vm-go.exe -i .\examples\fib.vasm -debug -compile
 see generated .\examples\fib.vm 
 ```
 #### Executing in Virtual Machine from .vasm file
@@ -59,7 +59,7 @@ see generated .\examples\fib.vm
 See [examples](./examples) folder for more .vasm Examples
 ```console
 > .\go_build.ps1 .\vm-go.go
-> .\vm-go.exe -input .\examples\powers_of_two.vasm -limit 71
+> .\vm-go.exe -i .\examples\powers_of_two.vasm -limit 71
 see .\vm-go.exe -h for help on input paramenters
 ```
 **'vasm'** Instruction Set which generated powers of 2 : [powers_of_two.vasm](./examples/powers_of_two.vasm)
@@ -110,7 +110,7 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 #### Calculating 'e' from [e.vasm](./examples/e.vasm)
 
 ```console
-> .\vm-go.exe -input .\examples\e.vasm -limit 120
+> .\vm-go.exe -i .\examples\e.vasm -limit 120
 ```
 #### Output
 ```console
