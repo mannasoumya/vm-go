@@ -28,7 +28,7 @@ const MaxInt = int(MaxUint >> 1)
 const MinInt = -MaxInt - 1
 const MinFloat = math.SmallestNonzeroFloat64
 
-var Inst_ARR = []string{"push", "addi", "subi", "muli", "divi", "addf", "subf", "mulf", "divf", "jmp", "halt", "nop", "ret", "dup", "swap", "call", "drop", "jmp_if", "not", "eqi", "eqf", "print"}
+var Inst_ARR = []string{"push", "addi", "subi", "muli", "divi", "addf", "subf", "mulf", "divf", "jmp", "halt", "nop", "ret", "dup", "swap", "call", "drop", "jmp_if", "not", "eqi", "eqf", "print","ignore_halt"}
 var Constant_Mapping_int = make(map[string]int64)
 var Constant_Mapping_float = make(map[string]float64)
 var Constant_Mapping_string = make(map[string]string)
@@ -486,6 +486,8 @@ func execute_inst(vm *VM, inst Inst) {
 		nop(vm)
 	case "INCLUDE":
 		nop(vm)
+	case "IGNORE_HALT":
+		nop(vm)
 	default:
 		panic("Unknown Instruction")
 	}
@@ -574,6 +576,8 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "INCLUDE":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "IGNORE_HALT":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		default:
 			panic("Unknown Instruction")
 		}
@@ -628,7 +632,7 @@ func process_comment(line string) string {
 }
 
 func chk_if_tok_is_inst(token string) bool {
-	assert_runtime(len(Inst_ARR) == 22, "Number of Instructions have changed")
+	assert_runtime(len(Inst_ARR) == 23, "Number of Instructions have changed")
 	for _, el := range Inst_ARR {
 		if el == strings.ToLower(token) {
 			return true
@@ -778,6 +782,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	lines := strings.Split(strings.ReplaceAll(file_content, "\r\n", "\n"), "\n")
 	instruction_count := 0
 	halt_flag := false
+	ignore_halt := false
 	if debug {
 		fmt.Println()
 	}
@@ -1037,9 +1042,22 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
 					exit_with_one("Syntax Error")
 				}
-				halt_flag = true
-				vm.PROGRAM[vm.program_size] = Inst{Name: "HALT"}
-
+				if ignore_halt {
+					vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
+				} else {
+					halt_flag = true
+					vm.PROGRAM[vm.program_size] = Inst{Name: "HALT"}
+				}
+				
+			case "IGNORE_HALT":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
+					exit_with_one("Syntax Error")
+				}
+				ignore_halt = true
+				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}				
+			
 			case "NOP":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
