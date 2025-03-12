@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"strconv"
@@ -28,7 +27,31 @@ const MaxInt = int(MaxUint >> 1)
 const MinInt = -MaxInt - 1
 const MinFloat = math.SmallestNonzeroFloat64
 
-var Inst_ARR = []string{"push", "addi", "subi", "muli", "divi", "addf", "subf", "mulf", "divf", "jmp", "halt", "nop", "ret", "dup", "swap", "call", "drop", "jmp_if", "not", "eqi", "eqf", "print","ignore_halt"}
+var Inst_ARR = []string{
+	"push",
+	"addi",
+	"subi",
+	"muli",
+	"divi",
+	"addf",
+	"subf",
+	"mulf",
+	"divf",
+	"jmp",
+	"halt",
+	"nop",
+	"ret",
+	"dup",
+	"swap",
+	"call",
+	"drop",
+	"jmp_if",
+	"not",
+	"eqi",
+	"eqf",
+	"print",
+	"ignore_halt",
+}
 var Constant_Mapping_int = make(map[string]int64)
 var Constant_Mapping_float = make(map[string]float64)
 var Constant_Mapping_string = make(map[string]string)
@@ -776,7 +799,7 @@ func parse_string_literal(str string) (string, error) {
 }
 
 func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
-	dat, err := ioutil.ReadFile(file_path)
+	dat, err := os.ReadFile(file_path)
 	check_err(err)
 	file_content := string(dat)
 	lines := strings.Split(strings.ReplaceAll(file_content, "\r\n", "\n"), "\n")
@@ -788,7 +811,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 	}
 	for i := 0; i < len(lines); i++ {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
-		line =  strings.Trim(line,"\t")
+		line = strings.Trim(line, "\t")
 		if line != "" {
 			label_check, new_line := check_if_label_and_push_to_label_table(vm, &lt_g, line, (i + 1), file_path)
 			line_split_by_space := strings.Split(new_line, " ")
@@ -1048,7 +1071,7 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					halt_flag = true
 					vm.PROGRAM[vm.program_size] = Inst{Name: "HALT"}
 				}
-				
+
 			case "IGNORE_HALT":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
@@ -1056,8 +1079,8 @@ func load_program_from_file(vm *VM, file_path string, halt_panic bool) {
 					exit_with_one("Syntax Error")
 				}
 				ignore_halt = true
-				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}				
-			
+				vm.PROGRAM[vm.program_size] = Inst{Name: "NOP"}
+
 			case "NOP":
 				if len(line_split_by_space) > 1 {
 					fmt.Printf("File : %s\n", file_path)
@@ -1240,8 +1263,8 @@ func init_all(initial_stack *[STACK_CAPACITY]Value_Holder, initial_program *[PRO
 	for i := 0; i < PROGRAM_CAPACITY; i++ {
 		initial_program[i] = Inst{Name: "", Operand: Value_Holder{int64holder: int64(MinInt), float64holder: float64(MinFloat), pointer: ""}}
 	}
-	Constant_Mapping_int    = make(map[string]int64)
-	Constant_Mapping_float  = make(map[string]float64)
+	Constant_Mapping_int = make(map[string]int64)
+	Constant_Mapping_float = make(map[string]float64)
 	Constant_Mapping_string = make(map[string]string)
 }
 
@@ -1255,10 +1278,10 @@ func main() {
 
 	vm_g := VM{STACK: initial_stack, PROGRAM: initial_program}
 
-	file_path                 := flag.String("i", "", ".vasm FILE PATH")
+	file_path := flag.String("i", "", ".vasm FILE PATH")
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
-	debug_flg                 := flag.Bool("debug", false, "Enable Debugger")
-	compile_flg               := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
+	debug_flg := flag.Bool("debug", false, "Enable Debugger")
+	compile_flg := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
 
 	flag.Parse()
 
