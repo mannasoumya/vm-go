@@ -1,4 +1,4 @@
-set -xe
+set -e
 if test -e "vm-go"; then
   mv vm-go vm-go.old
 fi
