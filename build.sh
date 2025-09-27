@@ -5,4 +5,6 @@ if test -e "vm-go"; then
 fi
 go build -ldflags "-s -w" vm-go.go
 rm vm-go.old
+chmod +x ./vm-go
 echo "...done"
+echo "Executable created. Run './vm-go'"
