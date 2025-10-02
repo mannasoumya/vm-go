@@ -319,11 +319,12 @@ func print(vm *VM) {
 		exit_with_one("Not enough values on the stack to print")
 	}
 	type_of_operand := get_operand_type_by_name(vm.STACK[vm.stack_size-1])
-	if type_of_operand == "int64" {
+	switch type_of_operand {
+	case "int64":
 		fmt.Printf("%d\n", vm.STACK[vm.stack_size-1].int64holder)
-	} else if type_of_operand == "float64" {
+	case "float64":
 		fmt.Printf("%f\n", vm.STACK[vm.stack_size-1].float64holder)
-	} else {
+	default:
 		fmt.Printf("%s\n", vm.STACK[vm.stack_size-1].pointer)
 	}
 	vm.stack_size -= 1
@@ -374,6 +375,7 @@ func get_operand_type_by_name(operand Value_Holder) string {
 }
 
 func reset_operand_except(operand *Value_Holder, name string) {
+	_ = operand
 	switch name {
 	case "int64":
 		operand = &Value_Holder{float64holder: math.SmallestNonzeroFloat64}
