@@ -453,7 +453,7 @@ func not(vm *VM) {
 
 func execute_inst(vm *VM, inst Inst) {
 	if vm.inst_ptr >= vm.program_size {
-		fmt.Printf("Instruction : %s : %d\n", inst.Name, inst.Operand)
+		fmt.Printf("Instruction : %s : %v\n", inst.Name, inst.Operand)
 		exit_with_one("Illegal Instruction Access")
 	}
 	if vm.stack_size < 0 {
@@ -763,23 +763,21 @@ func parse_and_load_define_operands(strs_to_process string, file_path string) (e
 		Constant_Mapping_string[var_name] = parsed_str
 		return nil
 	}
-	if str_parse_err != nil {
-		if strings.Contains(operand, ".") || strings.Contains(operand, "e") {
-			operand, err := strconv.ParseFloat(operand, 64)
-			if err != nil {
-				return err
-			}
-			Constant_Mapping_float[var_name] = float64(operand)
-			return nil
-		} else {
-			operand, err := strconv.Atoi(operand)
-			if err != nil {
-				return err
-			}
-			Constant_Mapping_int[var_name] = int64(operand)
-			return nil
+
+	if strings.Contains(operand, ".") || strings.Contains(operand, "e") {
+		operand, err := strconv.ParseFloat(operand, 64)
+		if err != nil {
+			return err
 		}
+		Constant_Mapping_float[var_name] = float64(operand)
+	} else {
+		operand, err := strconv.Atoi(operand)
+		if err != nil {
+			return err
+		}
+		Constant_Mapping_int[var_name] = int64(operand)
 	}
+
 	return nil
 }
 
