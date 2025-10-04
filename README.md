@@ -1,9 +1,11 @@
 # Stack Based Virtual Machine in GO
 
 ##### VASM - Assmebly Language for the Virtual Machine
-## Currently Supported Instructions in VASM 
 
-*(Only 64-bit Architecture Supported)*
+## Currently Supported Instructions in VASM
+
+_(Only 64-bit Architecture Supported)_
+
 - **DEFINE**
 - **INCLUDE**
 - **PUSH**
@@ -29,41 +31,52 @@
 - **EQI**
 - **EQF**
 - **PRINT**
-
+- **PRINT_ASC**
 
 (See [Instruction Help](#instruction-help))
+
 ## Quick Start
 
 ```console
 > go build vm-go.go
 > .\vm-go.exe
 ```
+
 #### Alternatively on Linux (Build with Optimizations)
+
 ```console
 > chmod +x build.sh
 > ./build.sh
 > ./vm-go
 ```
+
 #### Alternatively on Powershell (Build with Optimizations)
+
 ```console
 > .\go_build.ps1 .\vm-go.go
 > .\vm-go.exe
 ```
+
 #### Running With Step Debugging and Also Compiling to Byte Code .vm
+
 ```console
 > .\go_build.ps1 .\vm-go.go
 > .\vm-go.exe -i .\examples\fib.vasm -debug -compile
-see generated .\examples\fib.vm 
+see generated .\examples\fib.vm
 ```
+
 #### Executing in Virtual Machine from .vasm file
 
 See [examples](./examples) folder for more .vasm Examples
+
 ```console
 > .\go_build.ps1 .\vm-go.go
 > .\vm-go.exe -i .\examples\powers_of_two.vasm -limit 71
 see .\vm-go.exe -h for help on input paramenters
 ```
+
 **'vasm'** Instruction Set which generated powers of 2 : [powers_of_two.vasm](./examples/powers_of_two.vasm)
+
 ```asm
 # Pushing initial
 PUSH 0
@@ -71,11 +84,13 @@ PUSH 1
 # Starting Loop
 loop1:
     ADDI		# Adding Last two of the stack
-    DUP 0		# Duplicating 
-    DUP 1		# Duplicating 
+    DUP 0		# Duplicating
+    DUP 1		# Duplicating
     JMP loop1
 ```
+
 #### Output
+
 ```console
 ---- PROGRAM TRACE BEG ----
 JMP : {int64holder:2 float64holder:5e-324 pointer:}
@@ -113,7 +128,9 @@ PUSH : {int64holder:0 float64holder:5e-324 pointer:}
 ```console
 > .\vm-go.exe -i .\examples\e.vasm -limit 120
 ```
+
 #### Output
+
 ```console
 ---- PROGRAM TRACE BEG ----
 JMP : {int64holder:3 float64holder:5e-324 pointer:}
@@ -143,9 +160,9 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 
 ## Instruction Help
 
-- **DEFINE** (Constant Name) (Operand Any) : Define Constants 
-- **INCLUDE** (Operand File Path String) : Include file path and load program from include path to VM 
-- **PUSH** (Operand Any) : Push Operand to Stack 
+- **DEFINE** (Constant Name) (Operand Any) : Define Constants
+- **INCLUDE** (Operand File Path String) : Include file path and load program from include path to VM
+- **PUSH** (Operand Any) : Push Operand to Stack
 - **ADDI** : Add top two operands as integers and push it back to top of Stack
 - **SUBI** : Subtract top two operands as integers and push it back to top of Stack
 - **MULI** : Multiply top two operands as integers and push it back to top of Stack
@@ -160,7 +177,7 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **NOP** : Perform No Operation in Stack
 - **RET** : Point Instruction Pointer to top of Satck
 - **DUP** (Operand Int) : Duplicate Operand from operand location of stack and push it back to top of Stack
-- **SWAP** (Operand Int) : Swap Values of operand location and top of stack (*can be used as an accumulator*) 
+- **SWAP** (Operand Int) : Swap Values of operand location and top of stack (_can be used as an accumulator_)
 - **CALL** (Operand Int / Label) : Jump to label or funcall within Stack
 - **DROP** : Remove Value from top of Stack
 - **JMP_IF** (Operand Int) : Jump If int64 is not 0
@@ -168,3 +185,4 @@ PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
 - **EQI** : Perform Integer Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
 - **EQF** : Perform Float Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack
 - **PRINT** : Prints the top of the stack and consumes it
+- **PRINT_ASC** : Prints ascii format of the top of the stack and consumes it

@@ -9,6 +9,7 @@ import (
 )
 
 func lex_and_parse_program(lines []string, file_path string, vm *VM, ignore_halt bool, halt_flag *bool, instruction_count *int) {
+	_ = halt_flag
 	for i := 0; i < len(lines); i++ {
 		line := strings.Trim(process_comment(strings.Trim(lines[i], " ")), " ")
 		line = strings.Trim(line, "\t")
@@ -354,6 +355,14 @@ func lex_and_parse_program(lines []string, file_path string, vm *VM, ignore_halt
 				include_file_path_array_size += 1
 				load_program_from_file(vm, include_file_path, false)
 				vm.PROGRAM[vm.program_size] = Inst{Name: "INCLUDE"}
+
+			case "PRINT_ASC":
+				if len(line_split_by_space) > 1 {
+					fmt.Printf("File : %s\n", file_path)
+					fmt.Printf("Syntax Error: Invalid Syntax near line %d : %s\n", (i + 1), line)
+					exit_with_one("Syntax Error")
+				}
+				vm.PROGRAM[vm.program_size] = Inst{Name: "PRINT_ASC"}
 
 			default:
 				fmt.Printf("File : %s\n", file_path)

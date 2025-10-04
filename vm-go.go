@@ -50,6 +50,7 @@ var Inst_ARR = []string{
 	"eqf",
 	"print",
 	"ignore_halt",
+	"print_asc",
 }
 var Constant_Mapping_int = make(map[string]int64)
 var Constant_Mapping_float = make(map[string]float64)
@@ -330,6 +331,21 @@ func print(vm *VM) {
 	vm.inst_ptr += 1
 }
 
+func print_asc(vm *VM) {
+	if vm.stack_size < 1 {
+		exit_with_one("Not enough values on the stack to print")
+	}
+	type_of_operand := get_operand_type_by_name(vm.STACK[vm.stack_size-1])
+	switch type_of_operand {
+	case "int64":
+		fmt.Printf("%s", string(rune(vm.STACK[vm.stack_size-1].int64holder)))
+	default:
+		fmt.Printf("\nERROR: Runtime error: Instruction `%s` failed: Expected type `integer` on top of stack but found `%s`\n", vm.PROGRAM[vm.inst_ptr].Name, type_of_operand)
+	}
+	vm.stack_size -= 1
+	vm.inst_ptr += 1
+}
+
 func halt(vm *VM) {
 	vm.vm_halt = 1
 }
@@ -512,6 +528,8 @@ func execute_inst(vm *VM, inst Inst) {
 		nop(vm)
 	case "IGNORE_HALT":
 		nop(vm)
+	case "PRINT_ASC":
+		print_asc(vm)
 	default:
 		panic("Unknown Instruction")
 	}
@@ -602,6 +620,8 @@ func print_program_trace(vm *VM, banner bool) {
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		case "IGNORE_HALT":
 			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
+		case "PRINT_ASC":
+			fmt.Printf("%s \n", vm.PROGRAM[i].Name)
 		default:
 			panic("Unknown Instruction")
 		}
@@ -656,7 +676,7 @@ func process_comment(line string) string {
 }
 
 func chk_if_tok_is_inst(token string) bool {
-	assert_runtime(len(Inst_ARR) == 23, "Number of Instructions have changed")
+	assert_runtime(len(Inst_ARR) == 24, "Number of Instructions have changed")
 	for _, el := range Inst_ARR {
 		if el == strings.ToLower(token) {
 			return true
