@@ -1,4 +1,4 @@
-name: Test Suite
+name: vm-go Test Suite
 
 on:
   push:
@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.21"
+          cache: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,20 +28,10 @@ jobs:
           python-version: "3.11"
 
       - name: Build VM executable
-        run: go build -o vm-go
+        run: ./build.sh
 
       - name: Make VM executable
         run: chmod +x vm-go
 
       - name: Run tests
         run: python test.py
-
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-failures
-          path: |
-            examples/
-            tests/expected/
-          retention-days: 7
