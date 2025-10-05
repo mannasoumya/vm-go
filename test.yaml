@@ -1,0 +1,46 @@
+name: Test Suite
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build VM executable
+        run: go build -o vm-go
+
+      - name: Make VM executable
+        run: chmod +x vm-go
+
+      - name: Run tests
+        run: python test.py
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failures
+          path: |
+            examples/
+            tests/expected/
+          retention-days: 7
