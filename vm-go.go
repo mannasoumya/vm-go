@@ -105,36 +105,6 @@ var deferredoprnds_g Deferred_Operands
 var include_file_path_array [INCLUDE_FILE_PATH_CAPACITY]string
 var include_file_path_array_size = 0
 
-func check_err(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-func exit_with_one(message string) {
-	if debug {
-		panic(message)
-	} else {
-		fmt.Println(message)
-		os.Exit(1)
-	}
-}
-
-func assert_runtime(cond bool, message string) {
-	if !cond {
-		fmt.Println("Runtime Assertion Error")
-		panic(message)
-	}
-}
-
-func prompt_for_debug() {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("\n-> Press Enter")
-	_, _, err := reader.ReadRune()
-	check_err(err)
-	fmt.Println()
-}
-
 func operand_type_check(op Value_Holder, expected_name string) bool {
 	return get_operand_type_by_name(op) == expected_name
 }
