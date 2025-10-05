@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"errors"
@@ -13,11 +12,11 @@ import (
 	"strings"
 )
 
-const STACK_CAPACITY = 1024
-const PROGRAM_CAPACITY = 1024
-const LABEL_CAPACITY = 1024
-const UNRESOLVED_JUMPS_CAPACITY = 1024
-const INCLUDE_FILE_PATH_CAPACITY = 1024
+const STACK_CAPACITY = 1024 * 16
+const PROGRAM_CAPACITY = 1024 * 16
+const LABEL_CAPACITY = 1024 * 16
+const UNRESOLVED_JUMPS_CAPACITY = 1024 * 16
+const INCLUDE_FILE_PATH_CAPACITY = 1024 * 16
 
 var debug bool
 
