@@ -30,7 +30,7 @@ def parse_arguments(arr, argument, bool=False, verbose=False):
     raise Exception("ArgumentNotFound")
 
 def usage(exit_code):
-    print(f"\nUsage: python {sys.argv[0]} [OPTIONS]")
+    print(f"Usage: python {sys.argv[0]} [OPTIONS]")
     print("\nOPTIONS:")
     print("   -i  (str)  : Run a specific test file in `examples` folder")
     print("   -h  (bool) : Print this help and exit")
