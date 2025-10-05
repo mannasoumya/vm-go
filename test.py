@@ -10,6 +10,7 @@ all_examples = [x for x in os.listdir("./examples") if x.endswith(".vasm")]
 ignore_direct_execution = ["consts.vasm"]
 exit_code               = 0
 error_count             = 0
+FIXED_DASH_BLOCK_SIZE   = 16
 
 def parse_arguments(arr, argument, bool=False, verbose=False):
     for i, val in enumerate(arr):
@@ -42,7 +43,8 @@ def usage(exit_code):
 
 def run_test(file_):
     global error_count
-    print("---------------------------")
+    dashes_count = len(file_)+FIXED_DASH_BLOCK_SIZE
+    print("-"*dashes_count)
     print(f"Executing: {file_}")
     process        = subprocess.Popen(['./vm-go', '-i', f"examples/{file_}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
@@ -51,7 +53,7 @@ def run_test(file_):
         print(f"Testing  : {file_}",end="")
         assert stdout.decode("utf-8") == file_content, "TestFail"
         print("...Ok")
-        print("---------------------------")
+        print("-"*dashes_count)
     except Exception as e:
         print("\n")
         print("stdout:")
