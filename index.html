@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VASM Documentation - Stack Based Virtual Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-purple: #bc8cff;
+            --accent-orange: #d29922;
+            --border-color: #30363d;
+            --code-bg: #0d1117;
+            --terminal-green: #4af626;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            padding: 48px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            font-size: 1.875em;
+            color: var(--text-primary);
+            margin: 48px 0 24px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 1.5em;
+            color: var(--text-primary);
+            margin: 32px 0 16px 0;
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.25em;
+            color: var(--accent-blue);
+            margin: 24px 0 12px 0;
+            font-weight: 500;
+        }
+
+        .subtitle {
+            font-size: 1.125em;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .section {
+            background-color: var(--bg-secondary);
+            padding: 32px;
+            margin: 24px 0;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .instruction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin: 24px 0;
+        }
+
+        .instruction-item {
+            background-color: var(--bg-tertiary);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.875em;
+            color: var(--accent-purple);
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .instruction-item:hover {
+            background-color: var(--bg-primary);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            margin: 16px 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.875em;
+            line-height: 1.45;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: var(--text-primary);
+        }
+
+        .terminal {
+            background-color: #0a0e14;
+            padding: 0;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background-color: #161b22;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .terminal-dot.red { background-color: #ff5f56; }
+        .terminal-dot.yellow { background-color: #ffbd2e; }
+        .terminal-dot.green { background-color: #27c93f; }
+
+        .terminal-body {
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.875em;
+            line-height: 1.5;
+            color: var(--terminal-green);
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .terminal-comment {
+            color: #6e7681;
+        }
+
+        .terminal-prompt {
+            color: var(--accent-blue);
+        }
+
+        .instruction-list {
+            margin: 24px 0;
+        }
+
+        .instruction-detail {
+            background-color: var(--bg-tertiary);
+            padding: 16px;
+            margin: 8px 0;
+            border-left: 3px solid var(--accent-blue);
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .instruction-detail:hover {
+            background-color: var(--bg-primary);
+            border-left-color: var(--accent-purple);
+        }
+
+        .instruction-name {
+            color: var(--accent-green);
+            font-weight: 600;
+            font-size: 1em;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        .instruction-desc {
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-size: 0.9375em;
+        }
+
+        .instruction-param {
+            color: var(--accent-orange);
+            font-style: italic;
+        }
+
+        .note {
+            background-color: rgba(187, 128, 9, 0.1);
+            border: 1px solid rgba(187, 128, 9, 0.4);
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--bg-tertiary);
+            color: var(--accent-orange);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-right: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .instruction-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .section {
+                padding: 20px;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+            margin-top: 64px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875em;
+        }
+
+        p {
+            margin: 12px 0;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Stack Based Virtual Machine in GO</h1>
+            <p class="subtitle">VASM - Assembly Language for the Virtual Machine</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="section">
+            <h2>Currently Supported Instructions in VASM</h2>
+            <div class="note">
+                <span class="badge">64-BIT ONLY</span>
+                <strong>Only 64-bit Architecture Supported</strong>
+            </div>
+
+            <div class="instruction-grid">
+                <div class="instruction-item">DEFINE</div>
+                <div class="instruction-item">INCLUDE</div>
+                <div class="instruction-item">PUSH</div>
+                <div class="instruction-item">ADDI</div>
+                <div class="instruction-item">SUBI</div>
+                <div class="instruction-item">MULI</div>
+                <div class="instruction-item">DIVI</div>
+                <div class="instruction-item">ADDF</div>
+                <div class="instruction-item">SUBF</div>
+                <div class="instruction-item">MULF</div>
+                <div class="instruction-item">DIVF</div>
+                <div class="instruction-item">JMP</div>
+                <div class="instruction-item">HALT</div>
+                <div class="instruction-item">IGNORE_HALT</div>
+                <div class="instruction-item">NOP</div>
+                <div class="instruction-item">RET</div>
+                <div class="instruction-item">DUP</div>
+                <div class="instruction-item">SWAP</div>
+                <div class="instruction-item">CALL</div>
+                <div class="instruction-item">DROP</div>
+                <div class="instruction-item">JMP_IF</div>
+                <div class="instruction-item">NOT</div>
+                <div class="instruction-item">EQI</div>
+                <div class="instruction-item">EQF</div>
+                <div class="instruction-item">PRINT</div>
+                <div class="instruction-item">PRINT_ASC</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Quick Start</h2>
+
+            <h4>Basic Build and Run</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$</span> go build vm-go.go
+<span class="terminal-prompt">$</span> ./vm-go.exe</div>
+            </div>
+
+            <h4>Linux Build (With Optimizations)</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$</span> chmod +x build.sh
+<span class="terminal-prompt">$</span> ./build.sh
+<span class="terminal-prompt">$</span> ./vm-go</div>
+            </div>
+
+            <h4>PowerShell Build (With Optimizations)</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">PS></span> .\go_build.ps1 .\vm-go.go
+<span class="terminal-prompt">PS></span> .\vm-go.exe</div>
+            </div>
+
+            <h4>Running With Step Debugging and Bytecode Compilation</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$</span> ./go_build.ps1 ./vm-go.go
+<span class="terminal-prompt">$</span> ./vm-go.exe -i ./examples/fib.vasm -debug -compile
+<span class="terminal-comment"># See generated ./examples/fib.vm</span></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Executing Programs</h2>
+
+            <h3>Hello World Example</h3>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$</span> ./vm-go -i examples/hello_world.vasm
+Hello, World</div>
+            </div>
+
+            <p>See <code>examples/</code> folder for more .vasm examples</p>
+
+            <h3>Powers of Two Example</h3>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$</span> ./go_build.ps1 ./vm-go.go
+<span class="terminal-prompt">$</span> ./vm-go.exe -i ./examples/powers_of_two.vasm -limit 71
+<span class="terminal-comment"># See ./vm-go.exe -h for help on input parameters</span></div>
+            </div>
+
+            <h4>VASM Source Code (powers_of_two.vasm)</h4>
+            <pre><code><span class="terminal-comment"># Pushing initial</span>
+PUSH 0
+PUSH 1
+<span class="terminal-comment"># Starting Loop</span>
+loop1:
+    ADDI        <span class="terminal-comment"># Adding Last two of the stack</span>
+    DUP 0       <span class="terminal-comment"># Duplicating</span>
+    DUP 1       <span class="terminal-comment"># Duplicating</span>
+    JMP loop1</code></pre>
+
+            <h4>Output</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body">---- PROGRAM TRACE BEG ----
+JMP : {int64holder:2 float64holder:5e-324 pointer:}
+DUP : {int64holder:1 float64holder:0 pointer:}
+DUP : {int64holder:0 float64holder:0 pointer:}
+ADDI
+PUSH : {int64holder:1 float64holder:5e-324 pointer:}
+PUSH : {int64holder:0 float64holder:5e-324 pointer:}
+---- PROGRAM TRACE END ----
+
+---- STACK BEG ----
+{1 5e-324 }
+{2 5e-324 }
+{4 5e-324 }
+{8 5e-324 }
+{16 5e-324 }
+{32 5e-324 }
+{64 5e-324 }
+{128 5e-324 }
+{256 5e-324 }
+{512 5e-324 }
+{1024 5e-324 }
+{2048 5e-324 }
+{4096 5e-324 }
+{8192 5e-324 }
+{16384 5e-324 }
+{32768 5e-324 }
+{65536 5e-324 }
+{131072 5e-324 }
+---- STACK END ----</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Calculating 'e' (Euler's Number)</h2>
+
+            <h4>Command</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$</span> ./vm-go.exe -i ./examples/e.vasm -limit 120</div>
+            </div>
+
+            <h4>Output</h4>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body">---- PROGRAM TRACE BEG ----
+JMP : {int64holder:3 float64holder:5e-324 pointer:}
+SWAP : {int64holder:2 float64holder:0 pointer:}
+SWAP : {int64holder:1 float64holder:0 pointer:}
+MULF
+SWAP : {int64holder:2 float64holder:0 pointer:}
+DUP : {int64holder:0 float64holder:0 pointer:}
+ADDF
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+SWAP : {int64holder:2 float64holder:0 pointer:}
+ADDF
+DIVF
+DUP : {int64holder:2 float64holder:0 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+PUSH : {int64holder:-9223372036854775808 float64holder:1 pointer:}
+---- PROGRAM TRACE END ----
+
+---- STACK BEG ----
+{-9223372036854775808 10 }
+{-9223372036854775808 3.6288e+06 }
+{-9223372036854775808 2.7182815255731922 }  <span class="terminal-comment">← Approximation of 'e' using Taylor series</span>
+---- STACK END ----</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Instruction Reference</h2>
+
+            <div class="instruction-list">
+                <div class="instruction-detail">
+                    <div class="instruction-name">DEFINE</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Constant Name) (Operand Any)</span> : Define Constants</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">INCLUDE</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand File Path String)</span> : Include file path and load program from include path to VM</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">PUSH</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand Any)</span> : Push Operand to Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">ADDI</div>
+                    <div class="instruction-desc">Add top two operands as integers and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">SUBI</div>
+                    <div class="instruction-desc">Subtract top two operands as integers and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">MULI</div>
+                    <div class="instruction-desc">Multiply top two operands as integers and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">DIVI</div>
+                    <div class="instruction-desc">Divide top two operands as integers and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">ADDF</div>
+                    <div class="instruction-desc">Add top two operands as float and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">SUBF</div>
+                    <div class="instruction-desc">Subtract top two operands as float and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">MULF</div>
+                    <div class="instruction-desc">Multiply top two operands as float and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">DIVF</div>
+                    <div class="instruction-desc">Divide top two operands as float and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">JMP</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand Int / Label)</span> : Jump to label or location within Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">HALT</div>
+                    <div class="instruction-desc">Halt the Virtual Machine</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">IGNORE_HALT</div>
+                    <div class="instruction-desc">Ignore any HALT instruction in the file</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">NOP</div>
+                    <div class="instruction-desc">Perform No Operation in Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">RET</div>
+                    <div class="instruction-desc">Point Instruction Pointer to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">DUP</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand Int)</span> : Duplicate Operand from operand location of stack and push it back to top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">SWAP</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand Int)</span> : Swap Values of operand location and top of stack (can be used as an accumulator)</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">CALL</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand Int / Label)</span> : Jump to label or funcall within Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">DROP</div>
+                    <div class="instruction-desc">Remove Value from top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">JMP_IF</div>
+                    <div class="instruction-desc"><span class="instruction-param">(Operand Int)</span> : Jump If int64 is not 0</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">NOT</div>
+                    <div class="instruction-desc">!0 → 0 and 0 → 1 on the top of the Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">EQI</div>
+                    <div class="instruction-desc">Perform Integer Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">EQF</div>
+                    <div class="instruction-desc">Perform Float Equality on top two values of stack, consumes them and push 1 if equal and 0 otherwise on top of Stack</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">PRINT</div>
+                    <div class="instruction-desc">Prints the top of the stack and consumes it</div>
+                </div>
+
+                <div class="instruction-detail">
+                    <div class="instruction-name">PRINT_ASC</div>
+                    <div class="instruction-desc">Prints ascii format of the top of the stack and consumes it</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>VASM Stack-Based Virtual Machine · Built with Go</p>
+        </div>
+    </div>
+</body>
+</html>
