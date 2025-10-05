@@ -67,6 +67,13 @@ see generated .\examples\fib.vm
 
 #### Executing in Virtual Machine from .vasm file
 
+##### Hello World
+
+```console
+> ./vm-go -i examples/hello_world.vasm
+Hello, World
+```
+
 See [examples](./examples) folder for more .vasm Examples
 
 ```console
