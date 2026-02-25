@@ -30,7 +30,7 @@ jobs:
       - name: Build VM executable
         run: ./build.sh
 
-      - name: Make VM executable
+      - name: Give executable permission
         run: chmod +x vm-go
 
       - name: Run tests
