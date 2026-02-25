@@ -45,13 +45,21 @@ def usage(exit_code):
     if exit_code != None:
         sys.exit(exit_code)
 
+def print_test_error(stdout, stderr, expected):
+    print_("Expected:")
+    print_(expected)
+    print_("Actual:")
+    print_(stdout.decode("utf-8"))
+    if stderr:
+        print_("Error:")
+        print_(stderr.decode("utf-8"))
+
 def run_test(file_, quiet):
     if not file_.endswith(".vasm"):
         file_ = file_ + ".vasm"
     global error_count
     dashes_count = len(file_) + FIXED_DASH_BLOCK_SIZE
 
-    # if not quiet:
     print_("-" * dashes_count, quiet=quiet)
     print_(f"Executing: {file_}", quiet=quiet)
 
@@ -60,18 +68,16 @@ def run_test(file_, quiet):
     file_content   = open(f"./tests/expected/{file_.removesuffix('.vasm')}.expected").read()
 
     try:
-        if not quiet:
-            print_(f"Testing  : {file_}", end="", quiet=quiet)
+        print_(f"Testing  : {file_}", end="", quiet=quiet)
         assert stdout.decode("utf-8") == file_content, "TestFail"
-
         print_("...Ok", quiet=quiet)
         print_("-" * dashes_count, quiet=quiet)
     except Exception as e:
-        print_("\n", quiet=quiet)
-        print_("stdout:", quiet=quiet)
-        print_("", quiet=quiet)
-        print_(stdout.decode("utf-8"), quiet=quiet)
         error_count = error_count + 1
+        print_("...Failed", quiet=quiet)
+        print_("\n", quiet=quiet)
+        print_test_error(stdout, stderr, file_content)
+        print_("-" * dashes_count, quiet=quiet)
 
 if __name__ == "__main__":
     quiet = False
