@@ -45,14 +45,14 @@ def usage(exit_code):
     if exit_code != None:
         sys.exit(exit_code)
 
-def print_test_error(stdout, stderr, expected):
-    print_("Expected:")
-    print_(expected)
-    print_("Actual:")
-    print_(stdout.decode("utf-8"))
+def print_test_error(stdout, stderr, expected, quiet):
+    print_("Expected:", quiet=quiet)
+    print_(expected, quiet=quiet)
+    print_("Actual:", quiet=quiet)
+    print_(stdout.decode("utf-8"), quiet=quiet)
     if stderr:
-        print_("Error:")
-        print_(stderr.decode("utf-8"))
+        print_("Error:", quiet=quiet)
+        print_(stderr.decode("utf-8"), quiet=quiet)
 
 def run_test(file_, quiet):
     if not file_.endswith(".vasm"):
@@ -76,7 +76,7 @@ def run_test(file_, quiet):
         error_count = error_count + 1
         print_("...Failed", quiet=quiet)
         print_("\n", quiet=quiet)
-        print_test_error(stdout, stderr, file_content)
+        print_test_error(stdout, stderr, file_content, quiet)
         print_("-" * dashes_count, quiet=quiet)
 
 if __name__ == "__main__":
