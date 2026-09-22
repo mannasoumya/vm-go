@@ -610,6 +610,9 @@ func main() {
 	execution_limit_steps_inp := flag.Int("limit", 69, "Execution Limit Steps")
 	debug_flg := flag.Bool("debug", false, "Enable Debugger")
 	compile_flg := flag.Bool("compile", false, "Compile VASM to native Binary .vm")
+	llvm_flg := flag.Bool("llvm", false, "Compile the program to LLVM IR (.ll) instead of executing it")
+	llvm_out_flg := flag.String("llvm-out", "", "Output path for the generated LLVM IR ('-' writes to stdout, default: input path with a .ll extension)")
+	llvm_no_limit_flg := flag.Bool("llvm-no-limit", false, "Omit the execution step limit from the generated LLVM IR (run until HALT)")
 
 	flag.Parse()
 
@@ -634,6 +637,12 @@ func main() {
 				compile_program_to_binary(&vm_temp, include_file_path_array[i])
 			}
 		}
+	}
+	if *llvm_flg {
+		// Compiling is not running: emit the module and stop, so that `-llvm-out -`
+		// stays usable as a pipe.
+		compile_program_to_llvm_ir(&vm_g, *file_path, *llvm_out_flg, *execution_limit_steps_inp, *llvm_no_limit_flg)
+		return
 	}
 	execute_program(&vm_g, *execution_limit_steps_inp)
 	// print_stack(&vm_g, false)

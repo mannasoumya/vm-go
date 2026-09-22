@@ -65,6 +65,47 @@ _(Only 64-bit Architecture Supported)_
 see generated .\examples\fib.vm
 ```
 
+#### Compiling to LLVM IR
+
+`-llvm` lowers the loaded program to a textual LLVM IR module (`.ll`) instead of
+running it. The module only needs the C standard library, so any `clang` can turn
+it into a native executable.
+
+```console
+> ./vm-go -i examples/hello_world.vasm -llvm
+Compiling 'examples/hello_world.vasm' to LLVM IR 'examples/hello_world.ll'
+LLVM IR Written To: examples/hello_world.ll
+Build it with: clang examples/hello_world.ll -o examples/hello_world
+
+> clang examples/hello_world.ll -o hello_world
+> ./hello_world
+Hello, World
+```
+
+Related options:
+
+- `-llvm-out` (str) : where to write the module. `-` writes it to stdout, which
+  makes `./vm-go -i prog.vasm -llvm -llvm-out - | clang -x ir - -o prog` work.
+- `-limit` (int) : the generated code enforces the same execution step limit the
+  interpreter does, so a compiled program stops exactly where `./vm-go -i prog.vasm -limit N`
+  stops. Defaults to 69, like the interpreter.
+- `-llvm-no-limit` (bool) : drop the step counter from the generated code and run
+  until `HALT`. Useful for the examples that loop forever on purpose.
+
+How it is compiled:
+
+- The stack becomes a global array of `{ i64, double, i8* }`, initialised to the
+  same sentinels the interpreter uses, because VASM has no static types and the
+  type of a value is recovered at runtime from those sentinels.
+- Every instruction becomes its own LLVM basic block, so `JMP`, `JMP_IF` and
+  `CALL` turn into real branches rather than interpreter dispatch.
+- `RET` pops an address that is only known at runtime, so it goes through an
+  `indirectbr` over a table of `blockaddress` constants.
+- Every runtime check, error message and printing quirk of the interpreter is
+  reproduced, so a compiled program is byte-for-byte identical on stdout. The one
+  intentional difference is that a Go panic ("Unreachable", "index out of range")
+  prints its first line and exits 2 without the goroutine stack trace.
+
 #### Executing in Virtual Machine from .vasm file
 
 ##### Hello World
